@@ -1,0 +1,8 @@
+<.header>
+  Edit Chess game <%= @chess_game.id %>
+  <:subtitle>Use this form to manage chess_game records in your database.</:subtitle>
+</.header>
+
+<.chess_game_form changeset={@changeset} action={~p"/chess_games/#{@chess_game}"} />
+
+<.back navigate={~p"/chess_games"}>Back to chess_games</.back>
