@@ -1649,6 +1649,60 @@ select {
   scrollbar-gutter: stable;
 }
 
+.chessboard {
+  display: grid;
+  grid-template-columns: repeat(8, 50px);
+  /* Create 8 columns */
+  grid-template-rows: repeat(8, 50px);
+  /* Create 8 rows */
+  border: 2px solid #333;
+  /* Border around the chessboard */
+}
+
+.box {
+  width: 50px;
+  /* Set width of each square */
+  height: 50px;
+  /* Set height of each square */
+  display: flex;
+  /* Use flexbox for centering */
+  align-items: center;
+  /* Center vertically */
+  justify-content: center;
+  /* Center horizontally */
+  font-size: 24px;
+  /* Set font size for pieces */
+}
+
+/* Alternate background colors for the chessboard */
+
+.chessboard .box:nth-child(odd) {
+  background-color: #f0d9b5;
+  /* Light squares */
+}
+
+.chessboard .box:nth-child(even) {
+  background-color: #b58863;
+  /* Dark squares */
+}
+
+/* Ensuring the board is correctly displayed */
+
+.chessboard .box:nth-child(n+57) {
+  background-color: #f0d9b5;
+  /* Last two rows light */
+}
+
+.chessboard .box:nth-child(n+49):nth-child(odd) {
+  background-color: #b58863;
+  /* Second last row dark */
+}
+
+.chessboard .box:nth-child(n+49):nth-child(even) {
+  background-color: #f0d9b5;
+  /* Second last row light */
+}
+
 /* This file is for your main application CSS */
 
 .hover\:cursor-pointer:hover {
