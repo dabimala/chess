@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    .chessboard {
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      width: 560px;
+      height: 560px;
+      border: 2px solid #333;
+    }
+
+    .chess-square {
+      width: 70px;
+      height: 70px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 40px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    /* Create alternating square colors */
+    .chess-square[data-row="0"][data-col="0"],
+    .chess-square[data-row="0"][data-col="2"],
+    .chess-square[data-row="0"][data-col="4"],
+    .chess-square[data-row="0"][data-col="6"],
+    .chess-square[data-row="1"][data-col="1"],
+    .chess-square[data-row="1"][data-col="3"],
+    .chess-square[data-row="1"][data-col="5"],
+    .chess-square[data-row="1"][data-col="7"],
+    .chess-square[data-row="2"][data-col="0"],
+    .chess-square[data-row="2"][data-col="2"],
+    .chess-square[data-row="2"][data-col="4"],
+    .chess-square[data-row="2"][data-col="6"],
+    .chess-square[data-row="3"][data-col="1"],
+    .chess-square[data-row="3"][data-col="3"],
+    .chess-square[data-row="3"][data-col="5"],
+    .chess-square[data-row="3"][data-col="7"],
+    .chess-square[data-row="4"][data-col="0"],
+    .chess-square[data-row="4"][data-col="2"],
+    .chess-square[data-row="4"][data-col="4"],
+    .chess-square[data-row="4"][data-col="6"],
+    .chess-square[data-row="5"][data-col="1"],
+    .chess-square[data-row="5"][data-col="3"],
+    .chess-square[data-row="5"][data-col="5"],
+    .chess-square[data-row="5"][data-col="7"],
+    .chess-square[data-row="6"][data-col="0"],
+    .chess-square[data-row="6"][data-col="2"],
+    .chess-square[data-row="6"][data-col="4"],
+    .chess-square[data-row="6"][data-col="6"],
+    .chess-square[data-row="7"][data-col="1"],
+    .chess-square[data-row="7"][data-col="3"],
+    .chess-square[data-row="7"][data-col="5"],
+    .chess-square[data-row="7"][data-col="7"] {
+      background-color: #b58863;
+    }
+
+    .chess-square {
+      background-color: #f0d9b5;
+    }
+
+    .chess-square:hover {
+      background-color: #aaa16d;
+    }
+
+    .chess-square.selected {
+      background-color: #646e40 !important;
+    }
+
+    .chess-piece {
+      user-select: none;
+      font-family: "Arial Unicode MS", "Segoe UI Symbol";
+    }
+
+    /* Game title styling */
+    h1 {
+      font-family: Arial, sans-serif;
+      color: #333;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    /* Game container */
+    .game-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+
+    /* Game status */
+    .game-status {
+      margin-top: 20px;
+      font-size: 1.2em;
+      font-family: Arial, sans-serif;
+    }
+
+    /* Chess piece Unicode characters */
+    .chess-piece[data-piece="K"] { content: "♔"; }
+    .chess-piece[data-piece="Q"] { content: "♕"; }
+    .chess-piece[data-piece="R"] { content: "♖"; }
+    .chess-piece[data-piece="B"] { content: "♗"; }
+    .chess-piece[data-piece="N"] { content: "♘"; }
+    .chess-piece[data-piece="P"] { content: "♙"; }
+    .chess-piece[data-piece="k"] { content: "♚"; }
+    .chess-piece[data-piece="q"] { content: "♛"; }
+    .chess-piece[data-piece="r"] { content: "♜"; }
+    .chess-piece[data-piece="b"] { content: "♝"; }
+    .chess-piece[data-piece="n"] { content: "♞"; }
+    .chess-piece[data-piece="p"] { content: "&#9823"; }
+  </style>
+</head>
+<body>
+  <div class="game-container">
+    <h1>Chess Game</h1>
+    <div id="chessboard" class="chessboard">
+      <%= for {row, row_index} <- Enum.with_index(@game.board) do %>
+        <%= for {piece, col_index} <- Enum.with_index(row) do %>
+          <div class="chess-square" 
+               id={"square-#{row_index}-#{col_index}"} 
+               data-row={row_index} 
+               data-col={col_index}
+               phx-click="select_square"
+               phx-value-row={row_index}
+               phx-value-col={col_index}>
+            <%= if piece != "" do %>
+              <span class="chess-piece" data-piece={piece}><%= piece %></span>
+            <% end %>
+          </div>
+        <% end %>
+      <% end %>
+    </div>
+    <div class="game-status">
+      <%= @game.status %>
+    </div>
+  </div>
+
+  <script>
+    // Add click handling for pieces
+    document.querySelectorAll('.chess-square').forEach(square => {
+      square.addEventListener('click', function() {
+        // Remove selected class from all squares
+        document.querySelectorAll('.chess-square').forEach(s => {
+          s.classList.remove('selected');
+        });
+        // Add selected class to clicked square
+        this.classList.add('selected');
+      });
+    });
+  </script>
+</body>
+</html>

@@ -290,18 +290,38 @@ defmodule ChessWeb.CoreComponents do
   attr :rest, :global,
     include: ~w(accept autocomplete capture cols disabled form list max maxlength min minlength
                 multiple pattern placeholder readonly required rows size step)
+  
+ def input(%{field: %Phoenix.HTML.FormField{} = field} = assigns) do
+  errors = Enum.map(field.errors, &translate_error(&1))
 
-  def input(%{field: %Phoenix.HTML.FormField{} = field} = assigns) do
-    errors = if Phoenix.Component.used_input?(field), do: field.errors, else: []
-
+  assigns =
     assigns
     |> assign(field: nil, id: assigns.id || field.id)
-    |> assign(:errors, Enum.map(errors, &translate_error(&1)))
+    |> assign(:errors, errors)
     |> assign_new(:name, fn -> if assigns.multiple, do: field.name <> "[]", else: field.name end)
     |> assign_new(:value, fn -> field.value end)
-    |> input()
-  end
 
+  ~H"""
+  <div phx-feedback-for={@name}>
+    <.label for={@id}><%= @label %></.label>
+    <input
+      type={@type}
+      name={@name}
+      id={@id}
+      value={Phoenix.HTML.Form.normalize_value(@type, @value)}
+      class={[
+        "mt-2 block w-full rounded-lg text-zinc-900 focus:ring-0 sm:text-sm sm:leading-6",
+        "phx-no-feedback:border-zinc-300 phx-no-feedback:focus:border-zinc-400",
+        @errors == [] && "border-zinc-300 focus:border-zinc-400",
+        @errors != [] && "border-rose-400 focus:border-rose-400"
+      ]}
+      {@rest}
+    />
+    <.error :for={msg <- @errors}><%= msg %></.error>
+  </div>
+  """
+end
+  
   def input(%{type: "checkbox"} = assigns) do
     assigns =
       assign_new(assigns, :checked, fn ->
