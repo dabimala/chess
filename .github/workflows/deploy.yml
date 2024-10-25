@@ -15,6 +15,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - run: ssh-keyscan crazychess.xyz > ~/.ssh/known_hosts
-    - run: printf "${{ PRIVATE_KEY }}" > '~/.ssh/id_ed25519.pub'
-    - run: ssh ${{ DEPLOY_USER }}@crazychess.xyz -t '. ~/.asdf/asdf.sh && ./updateandrestart.sh'
+    - run: printf "${{ secrets.PRIVATE_KEY }}" > '~/.ssh/id_ed25519.pub'
+    - run: ssh ${{ secrets.DEPLOY_USER }}@crazychess.xyz -t '. ~/.asdf/asdf.sh && ./updateandrestart.sh'
     
