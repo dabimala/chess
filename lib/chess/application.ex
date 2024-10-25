@@ -17,6 +17,8 @@ defmodule Chess.Application do
       {Phoenix.PubSub, name: Chess.PubSub},
       # Start the Finch HTTP client for sending emails
       {Finch, name: Chess.Finch},
+       {Registry, keys: :unique, name: Chess.GameRegistry},
+      {DynamicSupervisor, name: Chess.GameSupervisor},
       # Start a worker by calling: Chess.Worker.start_link(arg)
       # {Chess.Worker, arg},
       # Start to serve requests, typically the last entry

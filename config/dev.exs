@@ -2,7 +2,8 @@ import Config
 
 # Configure your database
 config :chess, Chess.Repo,
-  database: Path.expand("../chess_dev.db", __DIR__),
+  adapter: Ecto.Adapters.SQLite3,
+  database: Path.expand("../chess_dev.db",__DIR__),
   pool_size: 5,
   stacktrace: true,
   show_sensitive_data_on_connection_error: true
@@ -22,8 +23,8 @@ config :chess, ChessWeb.Endpoint,
   debug_errors: true,
   secret_key_base: "jVmdiCMKgUhKSidceJouzx8VzQsuXrC5q4F6D4vMRauSmLO4mxvFWXETXT2GScZp",
   watchers: [
-    esbuild: {Esbuild, :install_and_run, [:chess, ~w(--sourcemap=inline --watch)]},
-    tailwind: {Tailwind, :install_and_run, [:chess, ~w(--watch)]}
+    esbuild: {Esbuild, :install_and_run, [:default, ~w(--sourcemap=inline --watch)]},
+    tailwind: {Tailwind, :install_and_run, [:default, ~w(--watch)]}
   ]
 
 # ## SSL Support

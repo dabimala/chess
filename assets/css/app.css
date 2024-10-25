@@ -1,6 +1,47 @@
+<<<<<<< HEAD
 @import "tailwindcss/base";
 @import "tailwindcss/components";
 @import "tailwindcss/utilities";
 @import "./chess.css";
+=======
+import "./chess-symbols.css";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+>>>>>>> 29b91b13373d2ef570a6fbb29e465ee1c181d1e1
 
-/* This file is for your main application CSS */
+@layer components {
+  .chess-board {
+    @apply flex flex-col w-[600px] h-[600px] border-2 border-gray-800 mx-auto my-5;
+  }
+
+  .row {
+    @apply flex flex-1 w-full;
+  }
+
+  .square {
+    @apply flex-1 flex items-center justify-center text-2xl cursor-pointer border border-gray-300;
+    font-size: 40px; /* Larger piece size */
+    font-family: "DejaVu Sans", Arial, sans-serif;
+  }
+
+  .square.white {
+    @apply bg-chess-light;
+  }
+
+  .square.black {
+    @apply bg-chess-dark;
+  }
+
+  .square.selected {
+    @apply bg-chess-selected;
+  }
+
+  .square.valid-move {
+    @apply relative;
+  }
+
+  .square.valid-move::after {
+    @apply content-[''] absolute w-5 h-5 bg-green-500/30 rounded-full;
+  }
+}
