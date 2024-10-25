@@ -1,0 +1,20 @@
+name: Deploy
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy latest changes
+    runs-on: ubuntu-latest
+    steps:
+    - run: ssh-keyscan crazychess.xyz > ~/.ssh/known_hosts
+    - run: printf "${{ private_key }}" > '~/.ssh/id_ed25519.pub'
+    - run: ssh ${{ deploy_user }}@crazychess.xyz -t '. ~/.asdf/asdf.sh && ./updateandrestart.sh'
+    
