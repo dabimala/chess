@@ -23,6 +23,13 @@ defmodule ChessWeb.Router do
     get "/", PageController, :home
   end
 
+  scope "/", ChessWeb do
+    pipe_through :browser
+
+    get "/users/chessboard", ChessboardController, :chess
+  end
+
+
   # Other scopes may use custom stacks.
   # scope "/api", ChessWeb do
   #   pipe_through :api
@@ -77,4 +84,5 @@ defmodule ChessWeb.Router do
     get "/users/confirm/:token", UserConfirmationController, :edit
     post "/users/confirm/:token", UserConfirmationController, :update
   end
+
 end
