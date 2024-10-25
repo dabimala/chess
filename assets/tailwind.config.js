@@ -1,6 +1,5 @@
 // See the Tailwind configuration guide for advanced usage
 // https://tailwindcss.com/docs/configuration
-
 const plugin = require("tailwindcss/plugin")
 const fs = require("fs")
 const path = require("path")
@@ -9,29 +8,34 @@ module.exports = {
   content: [
     "./js/**/*.js",
     "../lib/chess_web.ex",
-    "../lib/chess_web/**/*.*ex"
+    "../lib/chess_web/**/*.*ex",
+    "../lib/chess_web/**/*.heex"  // Added this line for .heex templates
   ],
   theme: {
     extend: {
       colors: {
         brand: "#FD4F00",
+        'chess-light': '#f0d9b5',
+        'chess-dark': '#b58863',
+        'chess-selected': '#7b61ff',
+        'chess-valid-move': 'rgba(0, 255, 0, 0.3)'
       }
     },
   },
+  safelist: [
+    // Add classes that might be dynamically generated
+    'bg-chess-light',
+    'bg-chess-dark',
+    'bg-chess-selected',
+    'bg-chess-valid-move'
+  ],
   plugins: [
     require("@tailwindcss/forms"),
-    // Allows prefixing tailwind classes with LiveView classes to add rules
-    // only when LiveView classes are applied, for example:
-    //
-    //     <div class="phx-click-loading:animate-ping">
-    //
+    plugin(({addVariant}) => addVariant("phx-no-feedback", [".phx-no-feedback&", ".phx-no-feedback &"])),
     plugin(({addVariant}) => addVariant("phx-click-loading", [".phx-click-loading&", ".phx-click-loading &"])),
     plugin(({addVariant}) => addVariant("phx-submit-loading", [".phx-submit-loading&", ".phx-submit-loading &"])),
     plugin(({addVariant}) => addVariant("phx-change-loading", [".phx-change-loading&", ".phx-change-loading &"])),
-
     // Embeds Heroicons (https://heroicons.com) into your app.css bundle
-    // See your `CoreComponents.icon/1` for more information.
-    //
     plugin(function({matchComponents, theme}) {
       let iconsDir = path.join(__dirname, "../deps/heroicons/optimized")
       let values = {}
@@ -42,10 +46,14 @@ module.exports = {
         ["-micro", "/16/solid"]
       ]
       icons.forEach(([suffix, dir]) => {
-        fs.readdirSync(path.join(iconsDir, dir)).forEach(file => {
-          let name = path.basename(file, ".svg") + suffix
-          values[name] = {name, fullPath: path.join(iconsDir, dir, file)}
-        })
+        try {
+          fs.readdirSync(path.join(iconsDir, dir)).forEach(file => {
+            let name = path.basename(file, ".svg") + suffix
+            values[name] = {name, fullPath: path.join(iconsDir, dir, file)}
+          })
+        } catch (error) {
+          console.warn(`Warning: Heroicons directory ${dir} not found`)
+        }
       })
       matchComponents({
         "hero": ({name, fullPath}) => {
