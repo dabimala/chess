@@ -1,7 +1,14 @@
+<<<<<<< HEAD
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
+@import "./chess.css";
+=======
 import "./chess-symbols.css";
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+>>>>>>> 29b91b13373d2ef570a6fbb29e465ee1c181d1e1
 
 @layer components {
   .chess-board {
