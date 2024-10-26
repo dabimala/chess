@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Crazy Chess</title>
+  <link rel="stylesheet" href="<%= Routes.static_path(@conn, "/css/app.css") %>"> <!-- Link to your CSS -->
+  <style>
+    body {
+      background-color: #f0f0f0;
+      font-family: Arial, sans-serif;
+      text-align: center;
+      color: #333;
+    }
+    header {
+      margin: 20px 0;
+    }
+    .chess-board {
+      display: inline-block;
+      width: 400px;  /* Size of your chessboard */
+      height: 400px;
+      background-image: url('<%= Routes.static_path(@conn, "/images/chessboard.png") %>'); /* Add your chessboard image */
+      background-size: cover;
+      border: 2px solid #000; /* Optional border */
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Welcome to Crazy Chess!</h1>
+    <p>Experience chess like never before!</p>
+  </header>
+
+  <section class="chess-board-container">
+    <div class="chess-board"></div>
+  </section>
+
+  <footer>
+    <p>&copy; 2024 Crazy Chess. All rights reserved.</p>
+  </footer>
+</body>
+</html>
