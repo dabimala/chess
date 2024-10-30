@@ -20,10 +20,11 @@ defmodule ChessWeb.Router do
   scope "/", ChessWeb do
     pipe_through :browser
     get "/", PageController, :home
-    resources "/chess_games", ChessGameController, only: [:show, :index, :new, :create]
-    post "/chess_games/move", ChessGameController, :make_move
-    live "/play", GameLive.Show, :show
-    live "/play/:id", GameLive.Show, :show
+#    resources "/chess_games", ChessGameController, only: [:show, :index, :new, :create]
+#    post "/chess_games/move", ChessGameController, :make_move
+    live "/play", GameLive.Show
+    live "/play/:id", GameLive.Show
+    live "/playnew/", GameLive.NewShow
   end
 
   scope "/", ChessWeb do
@@ -73,8 +74,8 @@ defmodule ChessWeb.Router do
   scope "/", ChessWeb do
     pipe_through [:browser, :require_authenticated_user]
     
-    get "/games", GameController, :index
-    resources "/games", GameController
+#remove!    get "/games", GameController, :index
+#remove!    resources "/games", GameController
     get "/users/settings", UserSettingsController, :edit
     put "/users/settings", UserSettingsController, :update
     get "/users/settings/confirm_email/:token", UserSettingsController, :confirm_email

@@ -45,7 +45,11 @@ defmodule Chess.Game.GameServer do
 
   @impl true
   def handle_call({:make_move, from, to}, _from, state) do
-    with {:ok, new_game_state} <- GameState.make_move(state.game_state, from, to) do
+    # This line previously called GameState.make_move, a function that does not
+    # exist. I'm assuming that Chess.Live.GameLive.GameLogic.make_move() was
+    # meant.
+#    with {:ok, new_game_state} <- GameState.make_move(state.game_state, from, to) do
+    with {:ok, new_game_state} <- ChessWeb.Live.GameLive.GameLogic.make_move(state.game_state, from, to) do
       {:reply, {:ok, new_game_state}, %{state | game_state: new_game_state}}
     else
       error -> {:reply, error, state}

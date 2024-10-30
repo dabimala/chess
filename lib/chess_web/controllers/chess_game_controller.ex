@@ -15,7 +15,8 @@ defmodule ChessWeb.ChessGameController do
     game = GameState.new_game() # Changed from Game.new_game()
     
     # Updated to handle the new return type from make_move
-    new_game = GameState.make_move(game, {from_row, from_col}, {to_row, to_col})
+#    new_game = GameState.make_move(game, {from_row, from_col}, {to_row, to_col})
+    new_game = ChessWeb.Live.GameLive.GameLogic.make_move(game, {from_row, from_col}, {to_row, to_col})
     case new_game do
       %Chess.GameState{} = updated_game ->
         json(conn, %{status: "ok", board: updated_game.board})
@@ -39,7 +40,7 @@ defmodule ChessWeb.ChessGameController do
       {:ok, chess_game} ->
         conn
         |> put_flash(:info, "Chess game created successfully.")
-        |> redirect(to: ~p"/chess_games/#{chess_game}")
+        |> redirect(to: ~p"/play/#{chess_game}")
       {:error, %Ecto.Changeset{} = changeset} ->
         render(conn, :new, changeset: changeset)
     end
@@ -62,7 +63,7 @@ defmodule ChessWeb.ChessGameController do
       {:ok, chess_game} ->
         conn
         |> put_flash(:info, "Chess game updated successfully.")
-        |> redirect(to: ~p"/chess_games/#{chess_game}")
+        |> redirect(to: ~p"/play/#{chess_game}")
       {:error, %Ecto.Changeset{} = changeset} ->
         render(conn, :edit, chess_game: chess_game, changeset: changeset)
     end
@@ -73,6 +74,6 @@ defmodule ChessWeb.ChessGameController do
     {:ok, _chess_game} = Games.delete_chess_game(chess_game)  # Fixed asterisks
     conn
     |> put_flash(:info, "Chess game deleted successfully.")
-    |> redirect(to: ~p"/chess_games")
+    |> redirect(to: ~p"/play")
   end
 end
