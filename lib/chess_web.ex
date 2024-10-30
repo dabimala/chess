@@ -43,7 +43,7 @@ defmodule ChessWeb do
         layouts: [html: ChessWeb.Layouts]
 
       import Plug.Conn
-      use Gettext, backend: Chess.Gettext
+      use Gettext, backend: ChessWeb.Gettext
 
       unquote(verified_routes())
     end
