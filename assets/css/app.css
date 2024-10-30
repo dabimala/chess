@@ -45,29 +45,3 @@ import "./chess-symbols.css";
     @apply content-[''] absolute w-5 h-5 bg-green-500/30 rounded-full;
   }
 }
-
-/* Custom styles for the landing page */
-@layer base {
-  body {
-    background-color: #f0f0f0;
-    color: #333;
-    font-family: 'Arial', sans-serif;
-    text-align: center;
-  }
-
-  .chess-theme {
-    margin-top: 50px;
-  }
-
-  .landing-title {
-    @apply text-4xl font-bold mb-4;
-  }
-
-  .landing-description {
-    @apply text-xl mb-6;
-  }
-
-  .chess-board {
-    background-size: cover;
-  }
-}

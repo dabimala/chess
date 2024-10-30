@@ -2,6 +2,8 @@ defmodule ChessWeb.PageController do
   use ChessWeb, :controller
 
   def home(conn, _params) do
-    render(conn, :index, layout: false) # This assumes you create an index.html.heex template
+    # The home page is often custom made,
+    # so skip the default app layout.
+    render(conn, :home, layout: false)
   end
 end
