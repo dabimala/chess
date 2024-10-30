@@ -43,7 +43,7 @@ defmodule ChessWeb do
         layouts: [html: ChessWeb.Layouts]
 
       import Plug.Conn
-      import ChessWeb.Gettext
+      use Gettext, backend: ChessWeb.Gettext
 
       unquote(verified_routes())
     end
@@ -85,7 +85,7 @@ defmodule ChessWeb do
       import Phoenix.HTML
       # Core UI components and translation
       import ChessWeb.CoreComponents
-      import ChessWeb.Gettext
+      use Gettext, backend: Chess.Gettext
 
       # Shortcut for generating JS commands
       alias Phoenix.LiveView.JS
