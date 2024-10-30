@@ -3,6 +3,6 @@
   <:subtitle>Use this form to manage chess_game records in your database.</:subtitle>
 </.header>
 
-<.chess_game_form changeset={@changeset} action={~p"/chess_games/#{@chess_game}"} />
+<.chess_game_form changeset={@changeset} action={~p"/play/#{@chess_game}"} />
 
-<.back navigate={~p"/chess_games"}>Back to chess_games</.back>
+<.back navigate={~p"/play"}>Back to chess_games</.back>

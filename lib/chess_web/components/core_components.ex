@@ -17,7 +17,7 @@ defmodule ChessWeb.CoreComponents do
   use Phoenix.Component
 
   alias Phoenix.LiveView.JS
-  import ChessWeb.Gettext
+  use Gettext, backend: Chess.Gettext
 
   @doc """
   Renders a modal.
