@@ -17,9 +17,9 @@
 }
 
 .box {
-  width: 50px;
+  width: 500px;
   /* Set width of each square */
-  height: 50px;
+  height: 500px;
   /* Set height of each square */
   display: flex;
   /* Use flexbox for centering */
@@ -33,31 +33,16 @@
 
 /* Alternate background colors for the chessboard */
 
-.chessboard .box:nth-child(odd) {
+.box:nth-child(odd):nth-of-type(odd),
+.box:nth-child(even):nth-of-type(even) {
   background-color: #f0d9b5;
   /* Light squares */
 }
 
-.chessboard .box:nth-child(even) {
+.box:nth-child(odd):nth-of-type(even),
+.box:nth-child(even):nth-of-type(odd) {
   background-color: #b58863;
   /* Dark squares */
-}
-
-/* Ensuring the board is correctly displayed */
-
-.chessboard .box:nth-child(n+57) {
-  background-color: #f0d9b5;
-  /* Last two rows light */
-}
-
-.chessboard .box:nth-child(n+49):nth-child(odd) {
-  background-color: #b58863;
-  /* Second last row dark */
-}
-
-.chessboard .box:nth-child(n+49):nth-child(even) {
-  background-color: #f0d9b5;
-  /* Second last row light */
 }
 
 .chess-piece {
@@ -957,6 +942,31 @@ select{
   background-color: rgb(34 197 94 / 0.3);
   --tw-content: '';
   content: var(--tw-content);
+}
+
+/* Tooltip styling */
+
+.tooltip{
+  position: absolute;
+  display: none;
+  white-space: nowrap;
+  border-radius: 0.25rem;
+  --tw-bg-opacity: 1;
+  background-color: rgb(31 41 55 / var(--tw-bg-opacity));
+  padding: 0.25rem;
+  font-size: 0.75rem;
+  line-height: 1rem;
+  --tw-text-opacity: 1;
+  color: rgb(255 255 255 / var(--tw-text-opacity));
+  top: 100%;
+  /* Position below the square */
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+}
+
+.square:hover .tooltip{
+  display: block;
 }
 
 .sr-only{
