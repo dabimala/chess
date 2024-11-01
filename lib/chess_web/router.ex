@@ -17,14 +17,15 @@ defmodule ChessWeb.Router do
     plug :accepts, ["json"]
   end
 
+
   scope "/", ChessWeb do
     pipe_through :browser
     get "/", PageController, :home
 #    resources "/chess_games", ChessGameController, only: [:show, :index, :new, :create]
 #    post "/chess_games/move", ChessGameController, :make_move
     live "/auto", Live.Auto
+    live "/play/:id", Live.Interactive
     live "/play", Live.Interactive
-#    live "/play/:id", Live.Show
   end
 
   # Other scopes may use custom stacks.
