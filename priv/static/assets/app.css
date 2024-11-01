@@ -17,9 +17,9 @@
 }
 
 .box {
-  width: 50px;
+  width: 500px;
   /* Set width of each square */
-  height: 50px;
+  height: 500px;
   /* Set height of each square */
   display: flex;
   /* Use flexbox for centering */
@@ -33,31 +33,16 @@
 
 /* Alternate background colors for the chessboard */
 
-.chessboard .box:nth-child(odd) {
+.box:nth-child(odd):nth-of-type(odd),
+.box:nth-child(even):nth-of-type(even) {
   background-color: #f0d9b5;
   /* Light squares */
 }
 
-.chessboard .box:nth-child(even) {
+.box:nth-child(odd):nth-of-type(even),
+.box:nth-child(even):nth-of-type(odd) {
   background-color: #b58863;
   /* Dark squares */
-}
-
-/* Ensuring the board is correctly displayed */
-
-.chessboard .box:nth-child(n+57) {
-  background-color: #f0d9b5;
-  /* Last two rows light */
-}
-
-.chessboard .box:nth-child(n+49):nth-child(odd) {
-  background-color: #b58863;
-  /* Second last row dark */
-}
-
-.chessboard .box:nth-child(n+49):nth-child(even) {
-  background-color: #f0d9b5;
-  /* Second last row light */
 }
 
 .chess-piece {
@@ -959,6 +944,31 @@ select{
   content: var(--tw-content);
 }
 
+/* Tooltip styling */
+
+.tooltip{
+  position: absolute;
+  display: none;
+  white-space: nowrap;
+  border-radius: 0.25rem;
+  --tw-bg-opacity: 1;
+  background-color: rgb(31 41 55 / var(--tw-bg-opacity));
+  padding: 0.25rem;
+  font-size: 0.75rem;
+  line-height: 1rem;
+  --tw-text-opacity: 1;
+  color: rgb(255 255 255 / var(--tw-text-opacity));
+  top: 100%;
+  /* Position below the square */
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+}
+
+.square:hover .tooltip{
+  display: block;
+}
+
 .sr-only{
   position: absolute;
   width: 1px;
@@ -1398,6 +1408,10 @@ select{
   border-width: 1px;
 }
 
+.border-b{
+  border-bottom-width: 1px;
+}
+
 .border-t{
   border-top-width: 1px;
 }
@@ -1410,6 +1424,11 @@ select{
 .border-rose-400{
   --tw-border-opacity: 1;
   border-color: rgb(251 113 133 / var(--tw-border-opacity));
+}
+
+.border-zinc-100{
+  --tw-border-opacity: 1;
+  border-color: rgb(244 244 245 / var(--tw-border-opacity));
 }
 
 .border-zinc-200{
@@ -1458,6 +1477,11 @@ select{
 .bg-white{
   --tw-bg-opacity: 1;
   background-color: rgb(255 255 255 / var(--tw-bg-opacity));
+}
+
+.bg-zinc-100{
+  --tw-bg-opacity: 1;
+  background-color: rgb(244 244 245 / var(--tw-bg-opacity));
 }
 
 .bg-zinc-50{
@@ -1536,6 +1560,11 @@ select{
   padding-bottom: 0.125rem;
 }
 
+.py-1{
+  padding-top: 0.25rem;
+  padding-bottom: 0.25rem;
+}
+
 .py-10{
   padding-top: 2.5rem;
   padding-bottom: 2.5rem;
@@ -1549,6 +1578,11 @@ select{
 .py-20{
   padding-top: 5rem;
   padding-bottom: 5rem;
+}
+
+.py-3{
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
 }
 
 .py-4{
@@ -1812,6 +1846,10 @@ select{
 
 .hover\:cursor-pointer:hover{
   cursor: pointer;
+}
+
+.hover\:bg-zinc-200\/80:hover{
+  background-color: rgb(228 228 231 / 0.8);
 }
 
 .hover\:bg-zinc-50:hover{
