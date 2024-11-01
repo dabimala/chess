@@ -1,4 +1,4 @@
-defmodule ChessWeb.Live.GameLive.GameLogic do
+defmodule ChessWeb.Live.GameLogic do
   @type position :: {integer, integer}
   @type piece :: {String.t(), position}
   @type board :: %{position => String.t()}
@@ -37,17 +37,17 @@ defmodule ChessWeb.Live.GameLive.GameLogic do
   
   #Pawn Moves
   defp pawn_moves(board, {x, y}, color) do
-  direction = if color == :white, do: -1, else: 1  # White moves up (-1), Black moves down (+1)
-  start_row = if color == :white, do: 6, else: 1   # White pawns start at row 6, Black at row 1
+    direction = if color == :white, do: -1, else: 1  # White moves up (-1), Black moves down (+1)
+    start_row = if color == :white, do: 6, else: 1   # White pawns start at row 6, Black at row 1
 
-  IO.puts("Calculating pawn moves:")
-  IO.inspect({x, y}, label: "Current position")
-  IO.inspect(color, label: "Color")
-  IO.inspect(start_row, label: "Start row")
-  IO.inspect(direction, label: "Direction")
+    IO.puts("Calculating pawn moves:")
+    IO.inspect({x, y}, label: "Current position")
+    IO.inspect(color, label: "Color")
+    IO.inspect(start_row, label: "Start row")
+    IO.inspect(direction, label: "Direction")
 
-  # Basic forward move
-  forward_moves =
+    # Basic forward move
+    forward_moves =
     if empty_square?(board, {x + direction, y}) do  # Changed from y + direction to x + direction
       # One square forward
       one_forward = {x + direction, y}  # Changed from y + direction to x + direction
@@ -73,28 +73,28 @@ defmodule ChessWeb.Live.GameLive.GameLogic do
       []
     end
 
-  IO.inspect(forward_moves, label: "Forward moves before filtering")
+    IO.inspect(forward_moves, label: "Forward moves before filtering")
 
-  # Capture moves
-  possible_captures = [{x + direction, y - 1}, {x + direction, y + 1}]  # Updated capture coordinates
-  IO.inspect(possible_captures, label: "Possible capture positions")
-  
-  capture_moves =
-    possible_captures
-    |> Enum.filter(fn pos -> 
+    # Capture moves
+    possible_captures = [{x + direction, y - 1}, {x + direction, y + 1}]  # Updated capture coordinates
+    IO.inspect(possible_captures, label: "Possible capture positions")
+    
+    capture_moves =
+      possible_captures
+      |> Enum.filter(fn pos -> 
       can_capture = can_capture?(board, pos, color)
       IO.inspect({pos, can_capture}, label: "Capture check")
       can_capture
     end)
 
-  IO.inspect(capture_moves, label: "Valid capture moves")
+      IO.inspect(capture_moves, label: "Valid capture moves")
 
-  all_moves = forward_moves ++ capture_moves
-  valid_moves = Enum.filter(all_moves, &valid_position?/1)
-  
-  IO.inspect(valid_moves, label: "Final valid moves")
-  valid_moves
-end
+      all_moves = forward_moves ++ capture_moves
+      valid_moves = Enum.filter(all_moves, &valid_position?/1)
+      
+      IO.inspect(valid_moves, label: "Final valid moves")
+      valid_moves
+  end
 
   #Rook Moves
   defp rook_moves(board, {x, y}, color) do
