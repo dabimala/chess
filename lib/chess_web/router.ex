@@ -22,7 +22,8 @@ defmodule ChessWeb.Router do
     get "/", PageController, :home
 #    resources "/chess_games", ChessGameController, only: [:show, :index, :new, :create]
 #    post "/chess_games/move", ChessGameController, :make_move
-    live "/play", Live.Show
+    live "/auto", Live.Auto
+    live "/play", Live.Interactive
 #    live "/play/:id", Live.Show
   end
 

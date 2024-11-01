@@ -1,31 +1,30 @@
-defmodule ChessWeb.Live.Show do
+defmodule ChessWeb.Live.Auto do
   use ChessWeb, :live_view
-
-#  defp generate_game_id do
-#    :crypto.strong_rand_bytes(8) |> Base.url_encode64()
-#  end
 
   @impl true
   def mount(%{"id" => id}, _session, socket) do
-    IO.inspect id, label: "mount() id"
-    IO.inspect socket, label: "mount() socket"
-
     if (connected?(socket)) do
       # TODO: fetch game from server with id
-      IO.puts "Connected"
+      IO.puts "Connected with ID"
       {:ok, socket |> assign(:game, id)
                    |> assign(:board, Chess.Board.testboard())}
     else
-      IO.puts "Not connected"
+      IO.puts "Not connected with ID"
       {:ok, socket}
     end
   end
 
   @impl true
   def mount(_, _session, socket) do
-      IO.puts "Not connected no ID"
+    if (connected?(socket)) do
+      # TODO: fetch game from server with id
+      IO.puts "Connected no ID"
       {:ok, socket |> assign(:game, nil)
-                   |> assign(:board, Chess.Board.standard())}
+                   |> assign(:board, Chess.Board.testboard())}
+    else
+      IO.puts "Not connected no ID"
+      {:ok, socket}
+    end
   end
 
   @impl true
