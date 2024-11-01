@@ -1,46 +1,51 @@
-const GameHook = {
+let GameHook = {
   mounted() {
-    this.channel = null;
-    this.gameId = this.el.dataset.gameId;
-    
-    if (this.gameId) {
-      this.joinGame(this.gameId);
-    }
-
-    // Listen for local moves that need to be broadcast
-    this.handleEvent("broadcast_move", ({from, to}) => {
-      if (this.channel) {
-        this.channel.push("move_made", { from, to });
-      }
-    });
+    this.setupGame()
   },
 
-  joinGame(gameId) {
-    if (this.channel) {
-      this.channel.leave();
-    }
-
-    this.channel = window.gameSocket.channel(`game:${gameId}`);
-    
-    // Handle incoming moves from other player
-    this.channel.on("move_made", ({from, to}) => {
-      this.pushEvent("handle_remote_move", { from, to });
-    });
+  setupGame() {
+    const gameId = this.el.dataset.gameId
+    this.channel = window.socket.channel(`game:${gameId}`)
 
     this.channel.join()
       .receive("ok", response => {
-        console.log("Joined game successfully", response);
+        console.log("Joined game channel successfully", response)
       })
       .receive("error", response => {
-        console.error("Unable to join game", response);
-      });
+        console.log("Unable to join game channel", response)
+      })
+
+    this.channel.on("move_made", payload => {
+      this.handleRemoteMove(payload)
+    })
+
+    this.channel.on("player_joined", payload => {
+      console.log("Player joined:", payload)
+    })
   },
+
+  handleRemoteMove(payload) {
+    // Convert arrays back to the format expected by the LiveView
+    this.pushEvent("remote_move", {
+      from: payload.from,
+      to: payload.to,
+      player: payload.player
+    })
+  },
+
+  handleEvent("make_move", payload => {
+    this.channel.push("make_move", {
+      from: payload.from,
+      to: payload.to,
+      player: payload.player
+    })
+  }),
 
   destroyed() {
     if (this.channel) {
-      this.channel.leave();
+      this.channel.leave()
     }
   }
-};
+}
 
-export default GameHook;
+export default GameHook
