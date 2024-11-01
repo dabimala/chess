@@ -8,22 +8,24 @@ defmodule ChessWeb.Live.Show do
   @impl true
   def mount(%{"id" => id}, _session, socket) do
     IO.inspect id, label: "mount() id"
+    IO.inspect socket, label: "mount() socket"
 
     if (connected?(socket)) do
       # TODO: fetch game from server with id
       IO.puts "Connected"
       {:ok, socket |> assign(:game, id)
-                   |> assign(:board, Chess.Board.standard())}
+                   |> assign(:board, Chess.Board.testboard())}
     else
       IO.puts "Not connected"
-      {:ok, socket |> assign(:game, id)
-                   |> assign(:board, Chess.Board.standard())}
+      {:ok, socket}
     end
   end
 
   @impl true
   def mount(_, _session, socket) do
-    {:error, socket}
+      IO.puts "Not connected no ID"
+      {:ok, socket |> assign(:game, nil)
+                   |> assign(:board, Chess.Board.standard())}
   end
 
   defp random_movable_piece(board = %Chess.Board{cells: cells}) do
@@ -43,21 +45,11 @@ defmodule ChessWeb.Live.Show do
 
   @impl true
   def render(assigns) do
-    board = assigns[:board]
-#    IO.inspect board, label: "show() board"
-#    IO.inspect random_movable_piece(board), label: "piece and moves"
-
-    {loc, moves} = random_movable_piece(board)
-    move = Enum.random(moves)
-#    IO.inspect loc, label: "from"
-#    IO.inspect move, label: "to"
-#    IO.inspect board.cells[loc], label: "a"
-#    IO.inspect board, label: "before", limit: :infinity
-    board = Chess.Board.make_move(board, move, loc)
-#    IO.inspect board, label: "after", limit: :infinity
-
-    assigns = assign(assigns, :board, board)
-
+    if assigns[:board]  == nil do
+~H"""
+<center> <h2> Connecting to chess game... </h2> </center>
+"""
+    else
 ~H"""
 <div class="board">
  <%= for x <- 0..7 do %>
@@ -76,10 +68,24 @@ defmodule ChessWeb.Live.Show do
  <% end %>
 </div>
 """
+    end
   end
 
   @impl true
-  def handle_event(_, _, _socket) do
-    IO.puts "!! handle_event() called !!"
+  def handle_event(_, _, socket) do
+    board = socket.assigns[:board]
+#    IO.inspect board, label: "show() board"
+#    IO.inspect random_movable_piece(board), label: "piece and moves"
+
+    {from, moves} = random_movable_piece(board)
+    to = Enum.random(moves)
+#    IO.inspect from, label: "from"
+#    IO.inspect to, label: "to"
+#    IO.inspect board.cells[from], label: "a"
+#    IO.inspect board, label: "before", limit: :infinity
+    board = Chess.Board.make_move(board, to, from)
+#    IO.inspect board, label: "after", limit: :infinity
+
+    {:noreply, socket |> assign(:board, board)}
   end
 end
