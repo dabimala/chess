@@ -22,17 +22,9 @@ defmodule ChessWeb.Router do
     get "/", PageController, :home
 #    resources "/chess_games", ChessGameController, only: [:show, :index, :new, :create]
 #    post "/chess_games/move", ChessGameController, :make_move
-    live "/play", GameLive.Show
-    live "/play/:id", GameLive.Show
-    live "/playnew/", GameLive.NewShow
+    live "/play", Live.Show
+#    live "/play/:id", Live.Show
   end
-
-  scope "/", ChessWeb do
-    pipe_through :browser
-
-    get "/users/chessboard", ChessboardController, :chess
-  end
-
 
   # Other scopes may use custom stacks.
   # scope "/api", ChessWeb do
