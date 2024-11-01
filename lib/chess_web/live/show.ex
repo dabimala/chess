@@ -28,21 +28,6 @@ defmodule ChessWeb.Live.Show do
                    |> assign(:board, Chess.Board.standard())}
   end
 
-  defp random_movable_piece(board = %Chess.Board{cells: cells}) do
-    loc = Map.keys(cells) |> Enum.random()
-
-    if cells[loc] != nil do
-      moves = Chess.Piece.possible_moves(board, cells[loc], loc)
-      if length(moves) > 1 do
-	{loc, moves}
-      else
-	random_movable_piece(board)
-      end
-    else
-      random_movable_piece(board)
-    end
-  end
-
   @impl true
   def render(assigns) do
     if assigns[:board]  == nil do
@@ -68,6 +53,22 @@ defmodule ChessWeb.Live.Show do
  <% end %>
 </div>
 """
+    end
+  end
+
+
+  defp random_movable_piece(board = %Chess.Board{cells: cells}) do
+    loc = Map.keys(cells) |> Enum.random()
+
+    if cells[loc] != nil do
+      moves = Chess.Piece.possible_moves(board, cells[loc], loc)
+      if length(moves) > 1 do
+	{loc, moves -- [loc]}
+      else
+	random_movable_piece(board)
+      end
+    else
+      random_movable_piece(board)
     end
   end
 
