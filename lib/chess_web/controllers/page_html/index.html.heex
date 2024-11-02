@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Crazy Chess</title>
-  <link rel="stylesheet" href="<%= Routes.static_path(@conn, "/css/app.css") %>"> <!-- Link to your CSS -->
+  <link rel="stylesheet" href={~p"/css/app.css"}> <!-- Link to your CSS -->
   <style>
     body {
       background-color: #f0f0f0;
@@ -19,7 +19,7 @@
       display: inline-block;
       width: 400px;  /* Size of your chessboard */
       height: 400px;
-      background-image: url('<%= Routes.static_path(@conn, "/images/chessboard.png") %>'); /* Add your chessboard image */
+      background-image: url(<%= ~p"/images/chessboard.png" %>); /* Add your chessboard image */
       background-size: cover;
       border: 2px solid #000; /* Optional border */
     }
