@@ -6,7 +6,7 @@ defmodule Chess.Piece do
     %{:white =>
         %{:rook => "♖", :knight => "♘", :bishop => "♗", :queen => "♕", :king => "♔", :pawn => "♙"},
       :black =>
-	%{:rook => "♜", :knight => "♞", :bishop => "♝", :queen => "♛", :king => "♚", :pawn => "♟"},
+        %{:rook => "♜", :knight => "♞", :bishop => "♝", :queen => "♛", :king => "♚", :pawn => "♟"},
     }
   end
 
@@ -24,137 +24,195 @@ defmodule Chess.Piece do
   end
 
   def possible_moves(%Chess.Board{cells: cells},
-                     %Chess.Piece{color: _color, type: :king},
-                     {xloc, yloc}) do
+                     %Chess.Piece{color: color, type: :king},
+                     {row, col}) do
+    IO.puts("\n=== King Move Calculation ===")
+    IO.inspect({row, col, color}, label: "Calculating moves for king")
+
     # king can move to any one (1) adjacent space
-    Enum.filter([
-      {xloc + 0, yloc + 1},
-      {xloc + 1, yloc + 1},
-      {xloc + 1, yloc + 0},
-      {xloc + 1, yloc - 1},
-      {xloc + 0, yloc - 1},
-      {xloc - 1, yloc - 1},
-      {xloc - 1, yloc + 0},
-      {xloc - 1, yloc + 1},
-    ],
-      fn neighbor ->
-	Map.has_key?(cells, neighbor) and
-	(cells[neighbor] == nil)
-#	(cells[neighbor] == nil or cells[neighbor].color != color)
-      end)
+    moves = [
+      {row + 0, col + 1},  # Forward
+      {row + 1, col + 1},  # Forward-right
+      {row + 1, col + 0},  # Right
+      {row + 1, col - 1},  # Back-right
+      {row + 0, col - 1},  # Back
+      {row - 1, col - 1},  # Back-left
+      {row - 1, col + 0},  # Left
+      {row - 1, col + 1},  # Forward-left
+    ]
+
+    valid_moves = Enum.filter(moves, fn pos ->
+      Map.has_key?(cells, pos) and
+        (cells[pos] == nil or cells[pos].color != color)
+    end)
+
+    IO.inspect(valid_moves, label: "Valid king moves")
+    valid_moves
   end
 
-  def possible_moves(%Chess.Board{width: width, height: height, cells: cells},
-                     %Chess.Piece{type: :rook}, {xloc, yloc}) do
-    # for each direction make a list of adjacent empty squares, including the
-    # starting position
-    up    = consecutive([yloc] ++ for y <- yloc..0//-1, cells[{xloc, y}] == nil, do: y)
-    down  = consecutive([yloc] ++ for y <- yloc..(height - 1), cells[{xloc, y}] == nil, do: y)
-    left  = consecutive([xloc] ++ for x <- xloc..0//-1, cells[{x, yloc}] == nil, do: x)
-    right = consecutive([xloc] ++ for x <- xloc..(width - 1), cells[{x, yloc}] == nil, do: x)
+  def possible_moves(%Chess.Board{cells: cells},
+                     %Chess.Piece{color: color, type: :rook},
+                     {row, col}) do
+    IO.puts("\n=== Rook Move Calculation ===")
+    IO.inspect({row, col, color}, label: "Calculating moves for rook")
 
-    # add check at end of each path for capturable piece
+    # Calculate moves in each direction
+    directions = [{0, 1}, {0, -1}, {1, 0}, {-1, 0}]  # Up, Down, Right, Left
+    
+    moves = Enum.flat_map(directions, fn {row_dir, col_dir} ->
+      find_moves_in_direction(cells, {row, col}, {row_dir, col_dir}, color)
+    end)
 
-    Enum.uniq(
-      for y <- up ++ down do
-	{xloc, y}
-      end ++
-      for x <- left ++ right do
-	{x, yloc}
-      end
-    )
+    IO.inspect(moves, label: "Valid rook moves")
+    moves
   end
 
-  def possible_moves(%Chess.Board{width: _width, height: _height, cells: _cells},
-                     %Chess.Piece{color: _color, type: :bishop},
-                     _location) do
-    IO.puts "Chess.Piece.possible_moves(:bishop) was called"
-    []
+  def possible_moves(%Chess.Board{cells: cells},
+                     %Chess.Piece{color: color, type: :bishop},
+                     {row, col}) do
+    IO.puts("\n=== Bishop Move Calculation ===")
+    IO.inspect({row, col, color}, label: "Calculating moves for bishop")
+
+    # Calculate moves in diagonal directions
+    directions = [{1, 1}, {1, -1}, {-1, 1}, {-1, -1}]
+    
+    moves = Enum.flat_map(directions, fn {row_dir, col_dir} ->
+      find_moves_in_direction(cells, {row, col}, {row_dir, col_dir}, color)
+    end)
+
+    IO.inspect(moves, label: "Valid bishop moves")
+    moves
   end
 
-  def possible_moves(%Chess.Board{width: _width, height: _height, cells: _cells},
-                     %Chess.Piece{color: _color, type: :queen},
-                     _location) do
-    IO.puts "Chess.Piece.possible_moves(:queen) was called"
-    []
+  def possible_moves(%Chess.Board{cells: cells},
+                     %Chess.Piece{color: color, type: :queen},
+                     {row, col}) do
+    IO.puts("\n=== Queen Move Calculation ===")
+    IO.inspect({row, col, color}, label: "Calculating moves for queen")
+
+    # Combine rook and bishop moves
+    directions = [
+      {0, 1}, {0, -1}, {1, 0}, {-1, 0},  # Rook moves
+      {1, 1}, {1, -1}, {-1, 1}, {-1, -1}  # Bishop moves
+    ]
+    
+    moves = Enum.flat_map(directions, fn {row_dir, col_dir} ->
+      find_moves_in_direction(cells, {row, col}, {row_dir, col_dir}, color)
+    end)
+
+    IO.inspect(moves, label: "Valid queen moves")
+    moves
   end
 
-  def possible_moves(%Chess.Board{width: _width, height: _height, cells: cells},
-                     %Chess.Piece{color: _color, type: :knight},
-                     {xloc, yloc}) do
-    Enum.filter([
-      {xloc + 2, yloc + 1}, {xloc + 2, yloc - 1},
-      {xloc - 2, yloc + 1}, {xloc - 2, yloc - 1},
-      {xloc + 1, yloc + 2}, {xloc + 1, yloc - 2},
-      {xloc - 1, yloc + 2}, {xloc - 1, yloc - 2}
-    ],
-      fn neighbor ->
-	Map.has_key?(cells, neighbor) and
-	(cells[neighbor] == nil)
-#	(cells[neighbor] == nil or cells[neighbor].color != color)
-      end)
+  def possible_moves(%Chess.Board{cells: cells},
+                     %Chess.Piece{color: color, type: :knight},
+                     {row, col}) do
+    IO.puts("\n=== Knight Move Calculation ===")
+    IO.inspect({row, col, color}, label: "Calculating moves for knight")
+
+    moves = [
+      {row + 2, col + 1}, {row + 2, col - 1},
+      {row - 2, col + 1}, {row - 2, col - 1},
+      {row + 1, col + 2}, {row + 1, col - 2},
+      {row - 1, col + 2}, {row - 1, col - 2}
+    ]
+
+    valid_moves = Enum.filter(moves, fn pos ->
+      Map.has_key?(cells, pos) and
+        (cells[pos] == nil or cells[pos].color != color)
+    end)
+
+    IO.inspect(valid_moves, label: "Valid knight moves")
+    valid_moves
   end
 
-  def possible_moves(%Chess.Board{width: _width, height: _height, cells: cells},
-                     %Chess.Piece{color: color, type: :pawn},
-                     {x, y}) do
-    direction = if color == :white, do: -1, else: 1  # White moves up (-1), Black moves down (+1)
-    start_row = if color == :white, do: 6, else: 1   # White pawns start at row 6, Black at row 1
+  # Pawn moves - keeping your existing implementation as it works correctly
+  def possible_moves(%Chess.Board{cells: cells},
+                   %Chess.Piece{color: color, type: :pawn},
+                   {row, col}) do
+    direction = if color == :white, do: -1, else: 1
+    start_col = if color == :white, do: 6, else: 1
 
-    #IO.puts("Calculating pawn moves:")
-    #IO.inspect({x, y}, label: "Current position")
-    #IO.inspect(color, label: "Color")
-    #IO.inspect(start_row, label: "Start row")
-    #IO.inspect(direction, label: "Direction")
+    IO.puts("\n=== Pawn Move Calculation ===")
+    IO.inspect({row, col, color}, label: "Calculating moves for pawn")
+    IO.inspect(direction, label: "Movement direction")
+    IO.inspect(start_col, label: "Starting column")
 
-    # Basic forward move
-    forward_moves =
-    if Map.has_key?(cells, {x, y + direction}) and cells[{x, y + direction}] == nil do
-      # One square forward
-      one_forward = {x, y + direction}
-      #IO.inspect(one_forward, label: "One square forward")
-      moves = [one_forward]
-      
-      # Two squares forward from starting position
-      if x == start_row do  # Changed from y == start_row to x == start_row
-        two_forward = {x, y + (direction * 2)}  # Changed coordinate calculation
-        is_empty = Map.has_key?(cells, two_forward) and cells[two_forward] == nil
-        #IO.inspect(two_forward, label: "Two squares forward")
-        #IO.inspect(is_empty, label: "Two squares forward is empty")
-        if is_empty do
-          [two_forward | moves]
+    # Forward moves
+    forward_moves = 
+      if Map.has_key?(cells, {row, col + direction}) do
+        IO.puts("Checking forward to {#{row}, #{col + direction}}")
+        if cells[{row, col + direction}] == nil do
+          one_forward = {row, col + direction}
+          moves = [one_forward]
+          IO.puts("One move forward available: #{inspect(one_forward)}")
+
+          if col == start_col do
+            two_forward = {row, col + (direction * 2)}
+            IO.puts("Checking two forward to #{inspect(two_forward)}")
+            if Map.has_key?(cells, two_forward) && cells[two_forward] == nil do
+              IO.puts("Two moves forward available")
+              [two_forward | moves]
+            else
+              moves
+            end
+          else
+            moves
+          end
         else
-          moves
+          IO.puts("Forward square is blocked")
+          []
         end
       else
-        moves
+        IO.puts("Forward square is off board")
+        []
       end
-    else
-      #IO.puts("Forward square is not empty")
-      []
-    end
 
-    #IO.inspect(forward_moves, label: "Forward moves before filtering")
-    Enum.uniq([{x, y}] ++ forward_moves)
+    capture_positions = [
+      {row - 1, col + direction},  # Capture left diagonal
+      {row + 1, col + direction}   # Capture right diagonal
+    ]
 
-    # Capture moves
-#    possible_captures = [{x + direction, y - 1}, {x + direction, y + 1}]  # Updated capture coordinates
-#    #IO.inspect(possible_captures, label: "Possible capture positions")
-    
-#    capture_moves =
-#      possible_captures
-#      |> Enum.filter(fn pos -> 
-#      can_capture = can_capture?(board, pos, color)
-#      #IO.inspect({pos, can_capture}, label: "Capture check")
-#      can_capture
-#    end)
-#
-#      #IO.inspect(capture_moves, label: "Valid capture moves")
-#
-#      all_moves = forward_moves ++ capture_moves
-#      valid_moves = Enum.filter(all_moves, &valid_position?/1)
-#      
-#      #IO.inspect(valid_moves, label: "Final valid moves")
-#      valid_moves
+    IO.inspect(capture_positions, label: "Checking capture positions")
+
+    capture_moves = 
+      capture_positions
+      |> Enum.filter(fn pos ->
+        IO.inspect(pos, label: "Checking position")
+        if Map.has_key?(cells, pos) && cells[pos] != nil do
+          enemy = cells[pos].color != color
+          IO.puts("Found #{cells[pos].color} piece, can capture: #{enemy}")
+          enemy
+        else
+          IO.puts("No capturable piece")
+          false
+        end
+      end)
+
+    IO.inspect(forward_moves, label: "Forward moves")
+    IO.inspect(capture_moves, label: "Capture moves")
+
+    all_moves = forward_moves ++ capture_moves
+    IO.inspect(all_moves, label: "All valid moves")
+    all_moves
+  end
+
+  # Helper function to find moves in a specific direction until blocked
+  defp find_moves_in_direction(cells, {row, col}, {row_dir, col_dir}, color) do
+    Stream.iterate(1, &(&1 + 1))
+    |> Enum.reduce_while([], fn i, acc ->
+      new_pos = {row + (i * row_dir), col + (i * col_dir)}
+      
+      cond do
+        !Map.has_key?(cells, new_pos) ->
+          {:halt, acc}
+        cells[new_pos] == nil ->
+          {:cont, [new_pos | acc]}
+        cells[new_pos].color != color ->
+          {:halt, [new_pos | acc]}
+        true ->
+          {:halt, acc}
+      end
+    end)
   end
 end

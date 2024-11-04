@@ -2,11 +2,15 @@ defmodule ChessWeb.Live.Interactive do
   use ChessWeb, :live_view
   require Logger
   
+  # Modified mount function for joining existing games
   @impl true
   def mount(%{"id" => id}, _session, socket) do
     Logger.info("Mounting with ID: #{id}")
     
     if connected?(socket) do
+      # Subscribe to PubSub updates for this game
+      Chess.PubSub.subscribe("game:#{id}")
+      
       game_state = Chess.GameState.get_game(id)
       Logger.info("Game state for #{id}: #{inspect(game_state)}")
       
@@ -33,28 +37,30 @@ defmodule ChessWeb.Live.Interactive do
     end
   end
 
+  # Modified mount function for creating new games or rejoining as host
   @impl true
-  def mount(_params, _session, socket) do
-    Logger.info("Mounting without ID - creating new game")
+  def mount(params, _session, socket) do
+    Logger.info("Mounting without ID params: #{inspect(params)}")
     
     if connected?(socket) do
-      game_id = generate_game_id()
-      Logger.info("Generated new game ID: #{game_id}")
-      
-      initial_state = %{
-        board: Chess.Board.standard(),
-        turn: :white
-      }
-      
-      Chess.GameState.create_game(game_id, initial_state)
-      Logger.info("Saved initial state for game: #{game_id}")
-      
-      {:ok, socket |> assign(:game, game_id)
-                  |> assign(:board, initial_state.board)
-                  |> assign(:turn, initial_state.turn)
-                  |> assign(:selected_square, nil)
-                  |> assign(:valid_moves, [])
-                  |> assign(:player_color, :white)}
+      case params do
+        # New case to handle existing game ID in params
+        %{"game" => game_id} ->
+          Chess.PubSub.subscribe("game:#{game_id}")
+          case Chess.GameState.get_game(game_id) do
+            nil ->
+              create_new_game(socket)
+            game_state ->
+              {:ok, socket |> assign(:game, game_id)
+                          |> assign(:board, game_state.board)
+                          |> assign(:turn, game_state.turn)
+                          |> assign(:selected_square, nil)
+                          |> assign(:valid_moves, [])
+                          |> assign(:player_color, :white)}
+          end
+        _ ->
+          create_new_game(socket)
+      end
     else
       {:ok, socket |> assign(:game, nil)
                   |> assign(:board, Chess.Board.standard())
@@ -65,10 +71,35 @@ defmodule ChessWeb.Live.Interactive do
     end
   end
 
+  # New helper function to create games
+  defp create_new_game(socket) do
+    game_id = generate_game_id()
+    Logger.info("Generated new game ID: #{game_id}")
+    
+    # Subscribe to PubSub updates for the new game
+    Chess.PubSub.subscribe("game:#{game_id}")
+    
+    initial_state = %{
+      board: Chess.Board.standard(),
+      turn: :white
+    }
+    
+    Chess.GameState.create_game(game_id, initial_state)
+    Logger.info("Saved initial state for game: #{game_id}")
+    
+    {:ok, socket |> assign(:game, game_id)
+                |> assign(:board, initial_state.board)
+                |> assign(:turn, initial_state.turn)
+                |> assign(:selected_square, nil)
+                |> assign(:valid_moves, [])
+                |> assign(:player_color, :white)}
+  end
+
   defp generate_game_id do
     :crypto.strong_rand_bytes(8) |> Base.url_encode64(padding: false)
   end
 
+  # Render function remains unchanged
   @impl true
   def render(assigns) do
     if assigns[:board] == nil do
@@ -121,6 +152,7 @@ defmodule ChessWeb.Live.Interactive do
     end
   end
 
+  # Modified handle_event for select_square to use PubSub
   @impl true
   def handle_event("select_square", %{"row" => row, "col" => col}, socket) do
     if socket.assigns.turn == socket.assigns.player_color do
@@ -136,27 +168,27 @@ defmodule ChessWeb.Live.Interactive do
             new_board = Chess.Board.make_move(socket.assigns.board, position, from)
             new_turn = if(socket.assigns.turn == :white, do: :black, else: :white)
             
-            # Update game state
+            # Update game state and broadcast move
             if socket.assigns.game do
               Chess.GameState.create_game(socket.assigns.game, %{
                 board: new_board,
                 turn: new_turn
               })
               
-              # Broadcast the move to other player
-              send_update(ChessWeb.Live.Interactive, id: "game-board")
-              {:noreply, socket 
-                |> assign(:board, new_board)
-                |> assign(:turn, new_turn)
-                |> assign(:selected_square, nil)
-                |> assign(:valid_moves, [])
-                |> push_event("broadcast_move", %{
-                  from: Tuple.to_list(from),
-                  to: Tuple.to_list(position)
-                })}
-            else
-              {:noreply, socket}
+              # Broadcast move using PubSub instead of WebSocket
+              Chess.PubSub.broadcast("game:#{socket.assigns.game}", {:move_made, %{
+                from: from,
+                to: position,
+                board: new_board,
+                turn: new_turn
+              }})
             end
+
+            {:noreply, socket 
+              |> assign(:board, new_board)
+              |> assign(:turn, new_turn)
+              |> assign(:selected_square, nil)
+              |> assign(:valid_moves, [])}
           else
             Logger.info("Invalid move attempted")
             {:noreply, socket |> assign(:selected_square, nil) |> assign(:valid_moves, [])}
@@ -185,23 +217,10 @@ defmodule ChessWeb.Live.Interactive do
     end
   end
 
+  # New handle_info callback to process PubSub messages
   @impl true
-  def handle_event("handle_remote_move", %{"from" => from, "to" => to}, socket) do
-    Logger.info("Handling remote move from #{inspect(from)} to #{inspect(to)}")
-    
-    from_pos = List.to_tuple(from)
-    to_pos = List.to_tuple(to)
-    
-    new_board = Chess.Board.make_move(socket.assigns.board, to_pos, from_pos)
-    new_turn = if(socket.assigns.turn == :white, do: :black, else: :white)
-    
-    if socket.assigns.game do
-      Chess.GameState.create_game(socket.assigns.game, %{
-        board: new_board,
-        turn: new_turn
-      })
-    end
-    
+  def handle_info({:move_made, %{board: new_board, turn: new_turn}}, socket) do
+    Logger.info("Received move broadcast")
     {:noreply, socket
       |> assign(:board, new_board)
       |> assign(:turn, new_turn)

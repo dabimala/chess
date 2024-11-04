@@ -1,66 +1,50 @@
 defmodule ChessWeb.Live.GameLogic do
+  require Logger
+
   @type position :: {integer, integer}
   @type piece :: {String.t(), position}
   @type board :: %{position => String.t()}
 
-  @doc """
-  Gets valid moves for a piece at the given position.
-  Returns a list of valid positions the piece can move to.
-  """
-  def valid_moves(board, {x, y} = _position) do
-    case Map.get(board, {x, y}) do
-      "wP" -> pawn_moves(board, {x, y}, :white)
-      "bP" -> pawn_moves(board, {x, y}, :black)
-      "wR" -> rook_moves(board, {x, y}, :white)
-      "bR" -> rook_moves(board, {x, y}, :black)
-      "wN" -> knight_moves(board, {x, y}, :white)
-      "bN" -> knight_moves(board, {x, y}, :black)
-      "wB" -> bishop_moves(board, {x, y}, :white)
-      "bB" -> bishop_moves(board, {x, y}, :black)
-      "wQ" -> queen_moves(board, {x, y}, :white)
-      "bQ" -> queen_moves(board, {x, y}, :black)
-      "wK" -> king_moves(board, {x, y}, :white)
-      "bK" -> king_moves(board, {x, y}, :black)
+  def valid_moves(board, {x, y} = position) do
+    case Map.get(board.cells, position) do
+      %Chess.Piece{type: type, color: color} ->
+        case type do
+          :pawn -> pawn_moves(board, position, color)
+          :rook -> rook_moves(board, position, color)
+          :knight -> knight_moves(board, position, color)
+          :bishop -> bishop_moves(board, position, color)
+          :queen -> queen_moves(board, position, color)
+          :king -> king_moves(board, position, color)
+        end
       _ -> []
     end
   end
 
-  @doc """
-  Checks if a move is valid for the given piece.
-  """
-  def valid_move?(board, from, to) do
-    valid_moves(board, from)
-    |> Enum.member?(to)
+  defp pawn_moves(board, {row, col}, color) do
+    direction = if color == :white, do: -1, else: 1
+    start_col = if color == :white, do: 6, else: 1
+
+    IO.puts("\n=== Pawn Move Calculation ===")
+    IO.inspect({row, col, color}, label: "Calculating pawn moves")
+
+    # Forward moves
+    forward_moves = get_forward_moves(board, {row, col}, direction, start_col)
+    capture_moves = get_capture_moves(board, {row, col}, direction, color)
+    
+    all_moves = forward_moves ++ capture_moves
+    IO.inspect(all_moves, label: "All valid pawn moves")
+    all_moves
   end
 
-  # Movement patterns for each piece type
-  
-  #Pawn Moves
-  defp pawn_moves(board, {x, y}, color) do
-    direction = if color == :white, do: -1, else: 1  # White moves up (-1), Black moves down (+1)
-    start_row = if color == :white, do: 6, else: 1   # White pawns start at row 6, Black at row 1
+  defp get_forward_moves(board, {row, col}, direction, start_col) do
+    one_forward = {row, col + direction}
 
-    IO.puts("Calculating pawn moves:")
-    IO.inspect({x, y}, label: "Current position")
-    IO.inspect(color, label: "Color")
-    IO.inspect(start_row, label: "Start row")
-    IO.inspect(direction, label: "Direction")
-
-    # Basic forward move
-    forward_moves =
-    if empty_square?(board, {x + direction, y}) do  # Changed from y + direction to x + direction
-      # One square forward
-      one_forward = {x + direction, y}  # Changed from y + direction to x + direction
-      IO.inspect(one_forward, label: "One square forward")
+    if valid_position?(one_forward) && empty_position?(board, one_forward) do
       moves = [one_forward]
       
-      # Two squares forward from starting position
-      if x == start_row do  # Changed from y == start_row to x == start_row
-        two_forward = {x + (direction * 2), y}  # Changed coordinate calculation
-        is_empty = empty_square?(board, two_forward)
-        IO.inspect(two_forward, label: "Two squares forward")
-        IO.inspect(is_empty, label: "Two squares forward is empty")
-        if is_empty do
+      if col == start_col do
+        two_forward = {row, col + (2 * direction)}
+        if valid_position?(two_forward) && empty_position?(board, two_forward) do
           [two_forward | moves]
         else
           moves
@@ -69,151 +53,138 @@ defmodule ChessWeb.Live.GameLogic do
         moves
       end
     else
-      IO.puts("Forward square is not empty")
       []
     end
+  end
 
-    IO.inspect(forward_moves, label: "Forward moves before filtering")
-
-    # Capture moves
-    possible_captures = [{x + direction, y - 1}, {x + direction, y + 1}]  # Updated capture coordinates
-    IO.inspect(possible_captures, label: "Possible capture positions")
-    
-    capture_moves =
-      possible_captures
-      |> Enum.filter(fn pos -> 
-      can_capture = can_capture?(board, pos, color)
-      IO.inspect({pos, can_capture}, label: "Capture check")
-      can_capture
+  defp get_capture_moves(board, {row, col}, direction, color) do
+    [{row - 1, col + direction}, {row + 1, col + direction}]
+    |> Enum.filter(fn pos ->
+      valid_position?(pos) && can_capture?(board, pos, color)
     end)
-
-      IO.inspect(capture_moves, label: "Valid capture moves")
-
-      all_moves = forward_moves ++ capture_moves
-      valid_moves = Enum.filter(all_moves, &valid_position?/1)
-      
-      IO.inspect(valid_moves, label: "Final valid moves")
-      valid_moves
   end
 
-  #Rook Moves
-  defp rook_moves(board, {x, y}, color) do
+  defp rook_moves(board, {row, col}, color) do
+    IO.puts("\n=== Rook Move Calculation ===")
+    
+    # Horizontal and vertical directions
     directions = [{0, 1}, {0, -1}, {1, 0}, {-1, 0}]
-    sliding_moves(board, {x, y}, color, directions)
+    moves = sliding_moves(board, {row, col}, color, directions)
+    
+    IO.inspect(moves, label: "Valid rook moves")
+    moves
   end
- 
- #Knight Moves
-  defp knight_moves(board, {x, y}, color) do
-    [
-      {x + 2, y + 1}, {x + 2, y - 1},
-      {x - 2, y + 1}, {x - 2, y - 1},
-      {x + 1, y + 2}, {x + 1, y - 2},
-      {x - 1, y + 2}, {x - 1, y - 2}
+
+  defp knight_moves(board, {row, col}, color) do
+    IO.puts("\n=== Knight Move Calculation ===")
+    
+    moves = [
+      {row + 2, col + 1}, {row + 2, col - 1},
+      {row - 2, col + 1}, {row - 2, col - 1},
+      {row + 1, col + 2}, {row + 1, col - 2},
+      {row - 1, col + 2}, {row - 1, col - 2}
     ]
     |> Enum.filter(&valid_position?/1)
-    |> Enum.filter(fn pos -> 
-      empty_square?(board, pos) || can_capture?(board, pos, color)
+    |> Enum.filter(fn pos ->
+      empty_position?(board, pos) || can_capture?(board, pos, color)
     end)
-  end
-  
-  #Bishop Moves
-  defp bishop_moves(board, {x, y}, color) do
-    directions = [{1, 1}, {1, -1}, {-1, 1}, {-1, -1}]
-    sliding_moves(board, {x, y}, color, directions)
+    
+    IO.inspect(moves, label: "Valid knight moves")
+    moves
   end
 
-  #Queen Moves
-  defp queen_moves(board, {x, y}, color) do
+  defp bishop_moves(board, {row, col}, color) do
+    IO.puts("\n=== Bishop Move Calculation ===")
+    
+    # Diagonal directions
+    directions = [{1, 1}, {1, -1}, {-1, 1}, {-1, -1}]
+    moves = sliding_moves(board, {row, col}, color, directions)
+    
+    IO.inspect(moves, label: "Valid bishop moves")
+    moves
+  end
+
+  defp queen_moves(board, {row, col}, color) do
+    IO.puts("\n=== Queen Move Calculation ===")
+    
+    # All directions (combination of rook and bishop)
     directions = [
       {0, 1}, {0, -1}, {1, 0}, {-1, 0},
       {1, 1}, {1, -1}, {-1, 1}, {-1, -1}
     ]
-    sliding_moves(board, {x, y}, color, directions)
+    moves = sliding_moves(board, {row, col}, color, directions)
+    
+    IO.inspect(moves, label: "Valid queen moves")
+    moves
   end
- 
-  #King Moves
-  defp king_moves(board, {x, y}, color) do
-    [
-      {x + 1, y}, {x - 1, y},
-      {x, y + 1}, {x, y - 1},
-      {x + 1, y + 1}, {x + 1, y - 1},
-      {x - 1, y + 1}, {x - 1, y - 1}
+
+  defp king_moves(board, {row, col}, color) do
+    IO.puts("\n=== King Move Calculation ===")
+    
+    moves = [
+      {row, col + 1}, {row, col - 1},
+      {row + 1, col}, {row - 1, col},
+      {row + 1, col + 1}, {row + 1, col - 1},
+      {row - 1, col + 1}, {row - 1, col - 1}
     ]
     |> Enum.filter(&valid_position?/1)
-    |> Enum.filter(fn pos -> 
-      empty_square?(board, pos) || can_capture?(board, pos, color)
+    |> Enum.filter(fn pos ->
+      empty_position?(board, pos) || can_capture?(board, pos, color)
     end)
+    
+    IO.inspect(moves, label: "Valid king moves")
+    moves
   end
 
-  # Helper functions
-  defp sliding_moves(board, {x, y}, color, directions) do
+  defp sliding_moves(board, {row, col}, color, directions) do
     Enum.flat_map(directions, fn {dx, dy} ->
-      generate_line_moves(board, {x, y}, {dx, dy}, color)
+      generate_line_moves(board, {row, col}, {dx, dy}, color)
     end)
   end
 
-  defp generate_line_moves(board, {x, y}, {dx, dy}, color, acc \\ []) do
-    next_pos = {x + dx, y + dy}
+  defp generate_line_moves(board, {row, col}, {dx, dy}, color, acc \\ []) do
+    next_pos = {row + dx, col + dy}
 
     cond do
       !valid_position?(next_pos) ->
         acc
-
-      empty_square?(board, next_pos) ->
+      empty_position?(board, next_pos) ->
         generate_line_moves(board, next_pos, {dx, dy}, color, [next_pos | acc])
-
       can_capture?(board, next_pos, color) ->
         [next_pos | acc]
-
       true ->
         acc
     end
   end
 
-  defp valid_position?({x, y}) do
-  result = x >= 0 && x < 8 && y >= 0 && y < 8
-  IO.inspect({{x, y}, result}, label: "Position validity check")
-  result
-end
-
-defp empty_square?(board, pos) do
-  result = !Map.has_key?(board, pos)
-  IO.inspect({pos, result}, label: "Empty square check")
-  result
-end
-
-defp can_capture?(board, pos, color) do
-  result = case Map.get(board, pos) do
-    nil -> false
-    piece ->
-      piece_color = if String.starts_with?(piece, "w"), do: :white, else: :black
-      piece_color != color
+  defp valid_position?({row, col}) do
+    row >= 0 && row < 8 && col >= 0 && col < 8
   end
-  IO.inspect({pos, color, result}, label: "Capture check")
-  result
-end
-  @doc """
-  Makes a move on the board and returns the new board state.
-  """
-  def make_move(board, from, to) do
-    if valid_move?(board, from, to) do
-      piece = Map.get(board, from)
-      board
-      |> Map.delete(from)
-      |> Map.put(to, piece)
-    else
-      board
+
+  defp empty_position?(board, pos) do
+    board.cells[pos] == nil
+  end
+
+  defp can_capture?(board, pos, attacking_color) do
+    case board.cells[pos] do
+      nil -> false
+      piece -> piece.color != attacking_color
     end
   end
 
-  @doc """
-  Gets the color of the piece at the given position.
-  """
-  def piece_color(piece) when is_binary(piece) do
-    case String.first(piece) do
-      "w" -> :white
-      "b" -> :black
-      _ -> nil
+  def valid_move?(board, from, to) do
+    case Map.get(board.cells, from) do
+      nil -> false
+      piece -> to in valid_moves(board, from)
+    end
+  end
+
+  def make_move(board, from, to) do
+    if valid_move?(board, from, to) do
+      piece = board.cells[from]
+      %{board | cells: Map.put(Map.delete(board.cells, from), to, piece)}
+    else
+      board
     end
   end
 end
