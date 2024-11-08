@@ -10,19 +10,6 @@ defmodule Chess.Piece do
     }
   end
 
-  # returns the subarray starting at index 0, and ending at the index of the
-  # first element who is `diff` more than the previous element
-  defp consecutive(head, diff \\ 1, tail \\ []) do
-    # if there is still stuff and (tail is empty or items are still contiguous)
-    if length(head) > 0 and
-       (length(tail) == 0 or abs(List.first(head) - List.first(tail)) == diff) do
-      {new, old} = List.pop_at(head, 0);
-      consecutive(old, diff, [new | tail]);
-    else
-      Enum.reverse(tail);
-    end
-  end
-
   def possible_moves(%Chess.Board{cells: cells},
                      %Chess.Piece{color: color, type: :king},
                      {row, col}) do
