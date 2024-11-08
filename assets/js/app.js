@@ -1,7 +1,7 @@
 import "phoenix_html"
 import {Socket} from "phoenix"
 import {LiveSocket} from "phoenix_live_view"
-import topbar from "topbar"
+import topbar from "../vendor/topbar.js"
 import GameHook from "./hooks/game"
 
 // Set up game socket first
