@@ -20,8 +20,8 @@ config :chess, Chess.Repo,
 
 # Configures the endpoint
 config :chess, ChessWeb.Endpoint,
-  url: [host: "localhost", port: 4040],
-  check_origin: ["http://localhost:4040"],
+  url: [host: "localhost", port: System.get_env("PORT")],
+  check_origin: [System.get_env("URL")],
   adapter: Bandit.PhoenixAdapter,
   render_errors: [
     formats: [html: ChessWeb.ErrorHTML, json: ChessWeb.ErrorJSON],
