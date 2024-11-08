@@ -18,5 +18,5 @@ jobs:
     - run: ssh-keyscan crazychess.xyz > ~/.ssh/known_hosts
     - run: printf -- "${{ secrets.PRIVATE_KEY }}\n" > ~/.ssh/id_ed25519
     - run: chmod 600 ~/.ssh/id_ed25519
-    - run: ssh ${{ secrets.DEPLOY_USER }}@crazychess.xyz -t '. ~/.asdf/asdf.sh && ./updatethenstart.sh'
+    - run: ssh ${{ secrets.DEPLOY_USER }}@crazychess.xyz -t '. ~/.asdf/asdf.sh && ./updatethendeploy.sh'
     
