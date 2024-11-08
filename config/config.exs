@@ -4,18 +4,19 @@
 # This configuration file is loaded before any dependency and
 # is restricted to this project.
 
-# General application configuration
 import Config
 
+# General application configuration
+config :chess,
+  ecto_repos: [Chess.Repo],
+  generators: [timestamp_type: :utc_datetime]
+
+# Repository configuration
 config :chess, Chess.Repo,
   database: "chess_repo",
   username: "user",
   password: "pass",
   hostname: "localhost"
-
-config :chess,
-  ecto_repos: [Chess.Repo],
-  generators: [timestamp_type: :utc_datetime]
 
 # Configures the endpoint
 config :chess, ChessWeb.Endpoint,
@@ -32,6 +33,16 @@ config :chess, ChessWeb.Endpoint,
     esbuild: {Esbuild, :install_and_run, [:chess, ~w(--sourcemap=inline --watch)]},
     tailwind: {Tailwind, :install_and_run, [:chess, ~w(--watch)]}
   ]
+
+# PubSub configuration
+config :chess, Chess.PubSub,
+  adapter: Phoenix.PubSub.PG2,
+  pool_size: 1
+
+# Game state configuration
+config :chess, Chess.GameState,
+  cleanup_interval: 3600_000, # 1 hour in milliseconds
+  game_timeout: 86400_000    # 24 hours in milliseconds
 
 # Configures the mailer
 config :chess, Chess.Mailer, adapter: Swoosh.Adapters.Local
@@ -61,10 +72,34 @@ config :tailwind,
 # Configures Elixir's Logger
 config :logger, :console,
   format: "$time $metadata[$level] $message\n",
-  metadata: [:request_id]
+  metadata: [:request_id],
+  level: :debug  # Set to debug level for development
+
+# Additional logger configuration for game events
+config :logger, :game_logger,
+  format: "$time [$level] $message\n",
+  metadata: [:game_id, :player_id],
+  level: :debug
 
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
+
+# Socket configuration
+config :chess, ChessWeb.Endpoint,
+  socket_options: [
+    backlog: 1024,
+    nodelay: true,
+    linger: {true, 0},
+    exit_on_close: false
+  ]
+
+# LiveView configuration
+config :phoenix_live_view,
+  signing_salt: "eKhToocl",
+  temporary_assigns: [
+    board: nil,
+    valid_moves: []
+  ]
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

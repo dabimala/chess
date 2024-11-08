@@ -1,43 +1,42 @@
 const GameHook = {
   mounted() {
-    this.channel = null;
-    this.gameId = this.el.dataset.gameId;
-    
-    if (this.gameId) {
-      this.joinGame(this.gameId);
-    }
-
-    // Listen for local moves that need to be broadcast
-    this.handleEvent("broadcast_move", ({from, to}) => {
-      if (this.channel) {
-        this.channel.push("move_made", { from, to });
-      }
-    });
+    console.log("Game hook mounted");
+    this.setupGame();
   },
 
-  joinGame(gameId) {
-    if (this.channel) {
-      this.channel.leave();
-    }
+  setupGame() {
+    const gameId = this.el.dataset.gameId;
+    if (!gameId) return;
 
+    console.log("Setting up game:", gameId);
+    
+    // Join the game channel
     this.channel = window.gameSocket.channel(`game:${gameId}`);
     
-    // Handle incoming moves from other player
-    this.channel.on("move_made", ({from, to}) => {
-      this.pushEvent("handle_remote_move", { from, to });
+    this.channel.join()
+      .receive("ok", resp => {
+        console.log("Joined game channel successfully", resp);
+      })
+      .receive("error", resp => {
+        console.error("Unable to join game channel", resp);
+      });
+
+    // Listen for moves broadcast by the other player
+    this.channel.on("move_made", payload => {
+      console.log("Received move from other player:", payload);
+      this.pushEvent("handle_remote_move", payload);
     });
 
-    this.channel.join()
-      .receive("ok", response => {
-        console.log("Joined game successfully", response);
-      })
-      .receive("error", response => {
-        console.error("Unable to join game", response);
-      });
+    // Listen for local moves that need to be broadcast
+    this.handleEvent("broadcast_move", payload => {
+      console.log("Broadcasting move to other player:", payload);
+      this.channel.push("move_made", payload);
+    });
   },
 
   destroyed() {
     if (this.channel) {
+      console.log("Leaving game channel");
       this.channel.leave();
     }
   }
