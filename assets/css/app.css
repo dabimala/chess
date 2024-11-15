@@ -44,4 +44,40 @@
   .square.valid-move::after {
     @apply content-[''] absolute w-5 h-5 bg-green-500/30 rounded-full;
   }
+  .chess-piece.dragon {
+    font-size: 2.5rem;  /* Slightly larger for emoji pieces */
+  }
+
+ .chess-piece.wizard {
+    font-size: 2.5rem;
+  }
+
+ .chess-piece.ninja {
+    font-size: 2.5rem;
+  }
+
+ .chess-piece.phoenix {
+    font-size: 2.5rem;
+  }
+ 
+ .piece-info {
+    @apply bg-white rounded-lg shadow p-4 mt-4;
+  }
+
+ .piece-info h3 {
+    @apply text-lg font-bold mb-2;
+  }
+
+ .piece-info .grid {
+    @apply grid-cols-2 gap-2;
+  }
+
+ .piece-info .piece {
+    @apply flex items-center space-x-2;
+  }
+
+ .rules {
+    @apply text-sm;
+  }  
+
 }
