@@ -2,3 +2,4 @@ _build/
 deps/
 *.db*
 lib/testing.ex
+priv/static

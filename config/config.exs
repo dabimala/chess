@@ -20,7 +20,8 @@ config :chess, Chess.Repo,
 
 # Configures the endpoint
 config :chess, ChessWeb.Endpoint,
-  url: [host: "localhost"],
+  url: [host: "localhost", port: System.get_env("PORT")],
+  check_origin: [System.get_env("URL")],
   adapter: Bandit.PhoenixAdapter,
   render_errors: [
     formats: [html: ChessWeb.ErrorHTML, json: ChessWeb.ErrorJSON],
@@ -60,7 +61,7 @@ config :esbuild,
 # Configure tailwind (the version is required)
 config :tailwind,
   version: "3.4.3",
-  default: [
+  chess: [
     args: ~w(
       --config=tailwind.config.js
       --input=css/app.css
