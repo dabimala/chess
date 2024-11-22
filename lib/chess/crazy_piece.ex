@@ -1,24 +1,34 @@
 defmodule Chess.CrazyPiece do
   require Logger
 
-  defstruct color: nil,
-            type: nil
+  # Update the struct definition with the new field
+  @enforce_keys [:color, :type, :has_moved]
+  defstruct [:color, :type, :has_moved]
 
   def glyphs do
     %{:white =>
-        %{:dragon => "🐉",    # Dragon - moves like queen + knight
-          :wizard => "🧙‍♂️",    # Wizard - can teleport to any empty square
-          :ninja => "🥷",     # Ninja - moves like knight + can move to any adjacent square
-          :phoenix => "🦅",   # Phoenix - moves diagonally, can jump pieces
-          :pawn => "♙",      # Keep regular pawn
-          :king => "♔"},     # Keep regular king
+        %{:dragon => "🐉",    
+          :wizard => "🧙‍♂️",    
+          :ninja => "🥷",     
+          :phoenix => "🦅",   
+          :pawn => "♙",      
+          :king => "♔"},     
       :black =>
-        %{:dragon => "🐉",
-          :wizard => "🧙‍♂️",
-          :ninja => "🥷",
-          :phoenix => "🦅",
+        %{:dragon => "🐲",    # Changed to green dragon
+          :wizard => "🧙🏿‍♂️",   # Changed to dark skin tone wizard
+          :ninja => "👤",     # Changed to silhouette
+          :phoenix => "🦢",   # Changed to black swan
           :pawn => "♟",
           :king => "♚"}
+    }
+  end
+
+  # Helper function to create a new piece
+  def new(type, color) do
+    %__MODULE__{
+      type: type,
+      color: color,
+      has_moved: false
     }
   end
 
@@ -36,14 +46,24 @@ defmodule Chess.CrazyPiece do
 
   # Wizard movements (Teleport anywhere empty or capturable)
   def possible_moves(%Chess.CrazyBoard{cells: cells},
-                    %Chess.CrazyPiece{type: :wizard, color: color},
+                    %Chess.CrazyPiece{type: :wizard, color: color, has_moved: has_moved},
                     {row, col}) do
     Logger.info("Calculating Wizard moves from {#{row}, #{col}}")
-    moves = for r <- 0..7,
-               c <- 0..7,
-               {r, c} != {row, col},
-               cells[{r, c}] == nil || cells[{r, c}].color != color,
-               do: {r, c}
+    moves = if has_moved do
+      # After first move - can move to any square not occupied by friendly piece
+      for r <- 0..7,
+          c <- 0..7,
+          {r, c} != {row, col},
+          cells[{r, c}] == nil || cells[{r, c}].color != color,
+          do: {r, c}
+    else
+      # First move - can only move to empty squares
+      for r <- 0..7,
+          c <- 0..7,
+          {r, c} != {row, col},
+          cells[{r, c}] == nil,
+          do: {r, c}
+    end
     Logger.info("Wizard can move to: #{inspect(moves)}")
     moves
   end
@@ -117,7 +137,7 @@ defmodule Chess.CrazyPiece do
     moves
   end
 
-  # Helper functions
+  # Helper functions remain the same
   defp get_queen_moves(cells, {row, col}, color) do
     directions = [
       {-1, -1}, {-1, 0}, {-1, 1},
