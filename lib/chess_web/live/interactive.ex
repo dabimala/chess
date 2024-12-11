@@ -27,7 +27,9 @@ defmodule ChessWeb.Live.Interactive do
                       |> assign(:turn, game_state.turn)
                       |> assign(:selected_square, nil)
                       |> assign(:valid_moves, [])
-                      |> assign(:player_color, :black)}
+                      |> assign(:player_color, :black)
+                      |> assign(:game_over, Map.get(game_state, :game_over, false))
+                      |> assign(:game_result, Map.get(game_state, :game_result, nil))}
       end
     else
       {:ok, socket |> assign(:game, id)
@@ -35,7 +37,9 @@ defmodule ChessWeb.Live.Interactive do
                   |> assign(:turn, :white)
                   |> assign(:selected_square, nil)
                   |> assign(:valid_moves, [])
-                  |> assign(:player_color, :black)}
+                  |> assign(:player_color, :black)
+                  |> assign(:game_over, false)
+                  |> assign(:game_result, nil)}
     end
   end
 
@@ -52,7 +56,9 @@ defmodule ChessWeb.Live.Interactive do
       
       initial_state = %{
         board: Chess.Board.standard(),
-        turn: :white
+        turn: :white,
+        game_over: false,
+        game_result: nil
       }
       
       Chess.GameState.create_game(game_id, initial_state)
@@ -63,14 +69,18 @@ defmodule ChessWeb.Live.Interactive do
                   |> assign(:turn, initial_state.turn)
                   |> assign(:selected_square, nil)
                   |> assign(:valid_moves, [])
-                  |> assign(:player_color, :white)}
+                  |> assign(:player_color, :white)
+                  |> assign(:game_over, false)
+                  |> assign(:game_result, nil)}
     else
       {:ok, socket |> assign(:game, nil)
                   |> assign(:board, Chess.Board.standard())
                   |> assign(:turn, :white)
                   |> assign(:selected_square, nil)
                   |> assign(:valid_moves, [])
-                  |> assign(:player_color, :white)}
+                  |> assign(:player_color, :white)
+                  |> assign(:game_over, false)
+                  |> assign(:game_result, nil)}
     end
   end
 
@@ -121,25 +131,17 @@ defmodule ChessWeb.Live.Interactive do
         <div class="text-center mt-4 text-xl font-bold">
           Current turn: <%= String.capitalize(to_string(@turn)) %>
         </div>
-        <!-- Timer display -->
-        <div id="timer-display" class="text-center mt-4 text-xl font-bold">
-          Time elapsed: 0 seconds
-        </div>
 
-        <!-- Inline JavaScript for Timer -->
-        <script>
-          (function startTimer() {
-            let seconds = 0;
-            const timerElement = document.getElementById("timer-display");
-
-            if (timerElement) {
-              setInterval(() => {
-                seconds += 1;
-                timerElement.textContent = `Time elapsed: ${seconds} seconds`;
-              }, 1000);
-            }
-          })();
-        </script>
+        <%= if @game_over do %>
+          <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+            <div class="bg-white p-8 rounded-lg shadow-lg text-center">
+              <h2 class="text-2xl font-bold mb-4"><%= @game_result %></h2>
+              <a href="/play" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                New Game
+              </a>
+            </div>
+          </div>
+        <% end %>
       </div>
       """
     end
@@ -147,7 +149,7 @@ defmodule ChessWeb.Live.Interactive do
 
   @impl true
   def handle_event("select_square", %{"row" => row, "col" => col}, socket) do
-    if socket.assigns.turn == socket.assigns.player_color do
+    if socket.assigns.turn == socket.assigns.player_color and !socket.assigns.game_over do
       position = {String.to_integer(row), String.to_integer(col)}
       Logger.info("Square clicked at position: #{inspect(position)}")
       
@@ -160,25 +162,38 @@ defmodule ChessWeb.Live.Interactive do
             new_board = Chess.Board.make_move(socket.assigns.board, position, from)
             new_turn = if(socket.assigns.turn == :white, do: :black, else: :white)
             
-            # Update game state and broadcast move
-            if socket.assigns.game do
-              Chess.GameState.create_game(socket.assigns.game, %{
-                board: new_board,
-                turn: new_turn
-              })
+            # Check for endgame conditions
+            game_state = case ChessWeb.Live.GameLogic.game_over?(new_board, new_turn) do
+              {:checkmate, losing_color} ->
+                winning_color = if losing_color == :white, do: :black, else: :white
+                %{board: new_board, turn: new_turn, game_over: true, 
+                  game_result: "Checkmate! #{String.capitalize("#{winning_color}")} wins!"}
               
-              # Broadcast move using regular chess specific topic
-              Chess.PubSub.broadcast("#{@pubsub_topic_prefix}#{socket.assigns.game}", {:move_made, %{
-                from: from,
-                to: position,
-                board: new_board,
-                turn: new_turn
-              }})
+              {:stalemate, _color} ->
+                %{board: new_board, turn: new_turn, game_over: true, 
+                  game_result: "Stalemate! Game is a draw."}
+              
+              {:draw, :insufficient_material} ->
+                %{board: new_board, turn: new_turn, game_over: true, 
+                  game_result: "Draw by insufficient material."}
+              
+              false ->
+                %{board: new_board, turn: new_turn, game_over: false, game_result: nil}
             end
 
-            {:noreply, socket 
-              |> assign(:board, new_board)
-              |> assign(:turn, new_turn)
+            # Update game state and broadcast move
+            if socket.assigns.game do
+              Chess.GameState.create_game(socket.assigns.game, game_state)
+              
+              # Broadcast move using regular chess specific topic
+              Chess.PubSub.broadcast("#{@pubsub_topic_prefix}#{socket.assigns.game}", {:move_made, game_state})
+            end
+
+            {:noreply, socket
+              |> assign(:board, game_state.board)
+              |> assign(:turn, game_state.turn)
+              |> assign(:game_over, game_state.game_over)
+              |> assign(:game_result, game_state.game_result)
               |> assign(:selected_square, nil)
               |> assign(:valid_moves, [])}
           else
@@ -204,18 +219,20 @@ defmodule ChessWeb.Live.Interactive do
           end
       end
     else
-      Logger.info("Move attempted on opponent's turn")
+      Logger.info("Move attempted on opponent's turn or game is over")
       {:noreply, socket}
     end
   end
 
   # Handle incoming moves from PubSub
   @impl true
-  def handle_info({:move_made, %{board: new_board, turn: new_turn}}, socket) do
+  def handle_info({:move_made, game_state}, socket) do
     Logger.info("Received move broadcast in regular chess")
     {:noreply, socket
-      |> assign(:board, new_board)
-      |> assign(:turn, new_turn)
+      |> assign(:board, game_state.board)
+      |> assign(:turn, game_state.turn)
+      |> assign(:game_over, game_state.game_over)
+      |> assign(:game_result, game_state.game_result)
       |> assign(:selected_square, nil)
       |> assign(:valid_moves, [])}
   end
