@@ -27,6 +27,8 @@ defmodule ChessWeb.Live.CrazyChess do
                       |> assign(:turn, game_state.turn)
                       |> assign(:selected_square, nil)
                       |> assign(:valid_moves, [])
+                      |> assign(:game_over, Map.get(game_state, :game_over, false))
+                      |> assign(:game_result, Map.get(game_state, :game_result, nil))
                       |> assign(:player_color, :black)}
       end
     else
@@ -35,6 +37,8 @@ defmodule ChessWeb.Live.CrazyChess do
                   |> assign(:turn, :white)
                   |> assign(:selected_square, nil)
                   |> assign(:valid_moves, [])
+                  |> assign(:game_over, false)
+                  |> assign(:game_result, nil)
                   |> assign(:player_color, :black)}
     end
   end
@@ -46,13 +50,15 @@ defmodule ChessWeb.Live.CrazyChess do
     if connected?(socket) do
       game_id = generate_game_id()
       Logger.info("Generated new game ID: #{game_id}")
-
+      
       # Subscribe to PubSub updates for the new game
       Chess.PubSub.subscribe("#{@pubsub_topic_prefix}#{game_id}")
       
       initial_state = %{
         board: Chess.CrazyBoard.standard(),
-        turn: :white
+        turn: :white,
+        game_over: false,
+        game_result: nil
       }
       
       Chess.GameState.create_game(game_id, initial_state)
@@ -63,6 +69,8 @@ defmodule ChessWeb.Live.CrazyChess do
                   |> assign(:turn, initial_state.turn)
                   |> assign(:selected_square, nil)
                   |> assign(:valid_moves, [])
+                  |> assign(:game_over, false)
+                  |> assign(:game_result, nil)
                   |> assign(:player_color, :white)}
     else
       {:ok, socket |> assign(:game, nil)
@@ -70,6 +78,8 @@ defmodule ChessWeb.Live.CrazyChess do
                   |> assign(:turn, :white)
                   |> assign(:selected_square, nil)
                   |> assign(:valid_moves, [])
+                  |> assign(:game_over, false)
+                  |> assign(:game_result, nil)
                   |> assign(:player_color, :white)}
     end
   end
@@ -144,13 +154,24 @@ defmodule ChessWeb.Live.CrazyChess do
           </div>
         </div>
       </div>
+
+      <%= if @game_over do %>
+        <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+          <div class="bg-white p-8 rounded-lg shadow-lg text-center">
+            <h2 class="text-2xl font-bold mb-4"><%= @game_result %></h2>
+            <a href="/crazy" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+              New Magical Battle
+            </a>
+          </div>
+        </div>
+      <% end %>
     </div>
     """
   end
 
   @impl true
   def handle_event("select_square", %{"row" => row, "col" => col}, socket) do
-    if socket.assigns.turn == socket.assigns.player_color do
+    if socket.assigns.turn == socket.assigns.player_color and !socket.assigns.game_over do
       position = {String.to_integer(row), String.to_integer(col)}
       Logger.info("Square clicked at position: #{inspect(position)}")
       
@@ -166,25 +187,44 @@ defmodule ChessWeb.Live.CrazyChess do
             new_board = Chess.CrazyBoard.make_move(socket.assigns.board, position, from)
             new_turn = if(socket.assigns.turn == :white, do: :black, else: :white)
             
+            # Check for endgame conditions
+            game_state = case check_game_over(new_board, new_turn) do
+              {:checkmate, losing_color} ->
+                winning_color = if losing_color == :white, do: :black, else: :white
+                %{board: new_board, 
+                  turn: new_turn, 
+                  game_over: true, 
+                  game_result: "Checkmate! #{String.capitalize("#{winning_color}")}'s magical forces have triumphed!"}
+              
+              {:stalemate, _color} ->
+                %{board: new_board, 
+                  turn: new_turn, 
+                  game_over: true, 
+                  game_result: "Stalemate! The magical battle ends in a mysterious draw."}
+              
+              {:draw, :insufficient_material} ->
+                %{board: new_board, 
+                  turn: new_turn, 
+                  game_over: true, 
+                  game_result: "Draw! The remaining magical forces are insufficient to continue."}
+              
+              false ->
+                %{board: new_board, turn: new_turn, game_over: false, game_result: nil}
+            end
+
             # Update game state and broadcast move
             if socket.assigns.game do
-              Chess.GameState.create_game(socket.assigns.game, %{
-                board: new_board,
-                turn: new_turn
-              })
+              Chess.GameState.create_game(socket.assigns.game, game_state)
               
               # Broadcast move using crazy chess specific topic
-              Chess.PubSub.broadcast("#{@pubsub_topic_prefix}#{socket.assigns.game}", {:move_made, %{
-                from: from,
-                to: position,
-                board: new_board,
-                turn: new_turn
-              }})
+              Chess.PubSub.broadcast("#{@pubsub_topic_prefix}#{socket.assigns.game}", {:move_made, game_state})
             end
 
             {:noreply, socket 
-              |> assign(:board, new_board)
-              |> assign(:turn, new_turn)
+              |> assign(:board, game_state.board)
+              |> assign(:turn, game_state.turn)
+              |> assign(:game_over, game_state.game_over)
+              |> assign(:game_result, game_state.game_result)
               |> assign(:selected_square, nil)
               |> assign(:valid_moves, [])}
           else
@@ -210,31 +250,58 @@ defmodule ChessWeb.Live.CrazyChess do
           end
       end
     else
-      Logger.info("Move attempted on opponent's turn")
+      Logger.info("Move attempted on opponent's turn or game is over")
       {:noreply, socket}
     end
   end
 
   # Handle incoming moves from PubSub
   @impl true
-  def handle_info({:move_made, %{board: new_board, turn: new_turn}}, socket) do
+  def handle_info({:move_made, game_state}, socket) do
     Logger.info("Received move broadcast in crazy chess")
     {:noreply, socket
-      |> assign(:board, new_board)
-      |> assign(:turn, new_turn)
+      |> assign(:board, game_state.board)
+      |> assign(:turn, game_state.turn)
+      |> assign(:game_over, game_state.game_over)
+      |> assign(:game_result, game_state.game_result)
       |> assign(:selected_square, nil)
       |> assign(:valid_moves, [])}
   end
 
-  # Handle move broadcasts
-  @impl true
-  def handle_event("broadcast_move", %{"from" => from, "to" => to}, socket) do
-    Logger.info("Broadcasting move in crazy chess")
-    {:noreply, push_event(socket, "make_move", %{
-      from: from,
-      to: to,
-      player: socket.assigns.player_color
-    })}
+  defp check_game_over(board, color) do
+    cond do
+      king_captured?(board, color) -> {:checkmate, color}
+      no_valid_moves?(board, color) -> {:stalemate, color}
+      insufficient_material?(board) -> {:draw, :insufficient_material}
+      true -> false
+    end
+  end
+
+  defp king_captured?(board, color) do
+    not Enum.any?(board.cells, fn {_pos, piece} ->
+      piece && piece.type == :king && piece.color == color
+    end)
+  end
+
+  defp no_valid_moves?(board, color) do
+    board.cells
+    |> Enum.filter(fn {_pos, piece} -> piece && piece.color == color end)
+    |> Enum.all?(fn {pos, piece} ->
+      Chess.CrazyPiece.possible_moves(board, piece, pos) == []
+    end)
+  end
+
+  defp insufficient_material?(board) do
+    pieces = Enum.filter(board.cells, fn {_pos, piece} -> piece != nil end)
+    
+    case length(pieces) do
+      2 -> true  # Just kings
+      3 -> # King and a single piece
+        pieces |> Enum.any?(fn {_pos, piece} -> 
+          piece.type in [:king, :phoenix, :ninja]
+        end)
+      _ -> false
+    end
   end
 
   defp generate_game_id do
