@@ -10,7 +10,20 @@ defmodule Chess.Piece do
     }
   end
 
-  def possible_moves(%Chess.Board{cells: cells, capture_piles: capture_piles},
+  # returns the subarray starting at index 0, and ending at the index of the
+  # first element who is `diff` more than the previous element
+  defp consecutive(head, diff \\ 1, tail \\ []) do
+    # if there is still stuff and (tail is empty or items are still contiguous)
+    if length(head) > 0 and
+       (length(tail) == 0 or abs(List.first(head) - List.first(tail)) == diff) do
+      {new, old} = List.pop_at(head, 0);
+      consecutive(old, diff, [new | tail]);
+    else
+      Enum.reverse(tail);
+    end
+  end
+
+  def possible_moves(%Chess.Board{cells: cells},
                      %Chess.Piece{color: color, type: :king},
                      {row, col}) do
     IO.puts("\n=== King Move Calculation ===")
@@ -37,7 +50,7 @@ defmodule Chess.Piece do
     valid_moves
   end
 
-  def possible_moves(%Chess.Board{cells: cells, capture_piles: capture_piles},
+  def possible_moves(%Chess.Board{cells: cells},
                      %Chess.Piece{color: color, type: :rook},
                      {row, col}) do
     IO.puts("\n=== Rook Move Calculation ===")
@@ -54,7 +67,7 @@ defmodule Chess.Piece do
     moves
   end
 
-  def possible_moves(%Chess.Board{cells: cells, capture_piles: capture_piles},
+  def possible_moves(%Chess.Board{cells: cells},
                      %Chess.Piece{color: color, type: :bishop},
                      {row, col}) do
     IO.puts("\n=== Bishop Move Calculation ===")
@@ -71,7 +84,7 @@ defmodule Chess.Piece do
     moves
   end
 
-  def possible_moves(%Chess.Board{cells: cells, capture_piles: capture_piles},
+  def possible_moves(%Chess.Board{cells: cells},
                      %Chess.Piece{color: color, type: :queen},
                      {row, col}) do
     IO.puts("\n=== Queen Move Calculation ===")
@@ -91,7 +104,7 @@ defmodule Chess.Piece do
     moves
   end
 
-  def possible_moves(%Chess.Board{cells: cells, capture_piles: capture_piles},
+  def possible_moves(%Chess.Board{cells: cells},
                      %Chess.Piece{color: color, type: :knight},
                      {row, col}) do
     IO.puts("\n=== Knight Move Calculation ===")
@@ -114,9 +127,9 @@ defmodule Chess.Piece do
   end
 
   # Pawn moves - keeping your existing implementation as it works correctly
-  def possible_moves(%Chess.Board{cells: cells, capture_piles: capture_piles},
-                     %Chess.Piece{color: color, type: :pawn},
-                     {row, col}) do
+  def possible_moves(%Chess.Board{cells: cells},
+                   %Chess.Piece{color: color, type: :pawn},
+                   {row, col}) do
     direction = if color == :white, do: -1, else: 1
     start_col = if color == :white, do: 6, else: 1
 
