@@ -29,6 +29,8 @@ defmodule ChessWeb.Router do
     live "/play", Live.Interactive
     live "/crazy", Live.CrazyChess
     live "/crazy/:id", Live.CrazyChess
+    live "/play/:id/observe", Live.Observer
+    live "/crazy/:id/observe", Live.CrazyObserver
 
   end
 
