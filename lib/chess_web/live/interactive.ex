@@ -96,6 +96,12 @@ defmodule ChessWeb.Live.Interactive do
         <%= if @game do %>
           <div class="text-center mb-4">
             <div>Game ID: <%= @game %></div>
+            <div class="text-sm mt-1">
+              <span class="text-gray-600">Observer Link:</span>
+              <a href={"/play/#{@game}/observe"} target="_blank" class="text-blue-500 hover:text-blue-700 ml-1">
+                Share this link to let others watch
+              </a>
+            </div>
             <%= if @player_color do %>
               <div>You are playing as: <%= @player_color %></div>
             <% else %>
@@ -189,7 +195,7 @@ defmodule ChessWeb.Live.Interactive do
               Chess.PubSub.broadcast("#{@pubsub_topic_prefix}#{socket.assigns.game}", {:move_made, game_state})
             end
 
-            {:noreply, socket
+            {:noreply, socket 
               |> assign(:board, game_state.board)
               |> assign(:turn, game_state.turn)
               |> assign(:game_over, game_state.game_over)

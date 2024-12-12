@@ -91,10 +91,16 @@ defmodule ChessWeb.Live.CrazyChess do
       <div class="text-center mb-4 text-2xl font-bold">
         Crazy Chess
       </div>
-      
+
       <%= if @game do %>
         <div class="text-center mb-4">
           <div>Game ID: <%= @game %></div>
+          <div class="text-sm mt-1">
+            <span class="text-gray-600">Observer Link:</span>
+            <a href={"/crazy/#{@game}/observe"} target="_blank" class="text-blue-500 hover:text-blue-700 ml-1">
+              Share this link to let others watch this magical battle
+            </a>
+          </div>
           <%= if @player_color do %>
             <div>You are playing as: <%= @player_color %></div>
           <% else %>
@@ -255,7 +261,6 @@ defmodule ChessWeb.Live.CrazyChess do
     end
   end
 
-  # Handle incoming moves from PubSub
   @impl true
   def handle_info({:move_made, game_state}, socket) do
     Logger.info("Received move broadcast in crazy chess")
